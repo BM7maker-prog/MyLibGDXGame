@@ -40,6 +40,8 @@ public class Main extends InputAdapter implements ApplicationListener {
     private Animation<TextureRegion> jump;
     private Koala koala;
     private Fire fire;
+    private Coin coin;
+
 
     private Pool<Rectangle> rectPool = new Pool<Rectangle>() {
         @Override
@@ -84,7 +86,10 @@ public class Main extends InputAdapter implements ApplicationListener {
         // create the Koala we want to move around the world
         koala = new Koala();
         koala.position.set(20, 20);
-        fire = new Fire(koala.position.x+ 40,koala.position.y - 30);
+
+        coin = new Coin(koala.position.x + 20,koala.position.y - 32);
+
+        fire = new Fire(koala.position.x + 30,koala.position.y - 47);
 
         debugRenderer = new ShapeRenderer();
 
@@ -115,10 +120,15 @@ public class Main extends InputAdapter implements ApplicationListener {
 
         // render the koala
         renderKoala(deltaTime);
+
         Batch batch = renderer.getBatch();
+
+        coin.updateCoin(deltaTime);
         fire.updateFire(deltaTime);
+
         batch.begin();
 
+        coin.renderCoin(batch);
         fire.renderFire(batch);
 
         batch.end();
@@ -162,7 +172,7 @@ public class Main extends InputAdapter implements ApplicationListener {
 
         // clamp the velocity to the maximum, x-axis only
         koala.velocity.x = MathUtils.clamp(koala.velocity.x,
-                -Koala.MAX_VELOCITY, Koala.MAX_VELOCITY);
+            -Koala.MAX_VELOCITY, Koala.MAX_VELOCITY);
 
         // If the velocity is < 1, set it to 0 and set state to Standing
         if (Math.abs(koala.velocity.x) < 1) {
@@ -233,9 +243,14 @@ public class Main extends InputAdapter implements ApplicationListener {
         if (koalaRect.overlaps(fire.getBoundingBox())) {
             restartGame();  // Call restart function when touching fire
         }
-
+//        if (koalaRect.overlaps(coin.getBoundingBox())) {
+//            restartGame();
+//        }
         rectPool.free(koalaRect);
 
+        if (koala.position.y < 0){
+            restartGame();
+        }
         // unscale the velocity by the inverse delta time and set
         // the latest position
         koala.position.add(koala.velocity);
@@ -278,15 +293,15 @@ public class Main extends InputAdapter implements ApplicationListener {
         // based on the koala state, get the animation frame
         TextureRegion frame = null;
         switch (koala.state) {
-        case Standing:
-            frame = stand.getKeyFrame(koala.stateTime);
-            break;
-        case Walking:
-            frame = walk.getKeyFrame(koala.stateTime);
-            break;
-        case Jumping:
-            frame = jump.getKeyFrame(koala.stateTime);
-            break;
+            case Standing:
+                frame = stand.getKeyFrame(koala.stateTime);
+                break;
+            case Walking:
+                frame = walk.getKeyFrame(koala.stateTime);
+                break;
+            case Jumping:
+                frame = jump.getKeyFrame(koala.stateTime);
+                break;
         }
 
         // draw the koala, depending on the current velocity
@@ -325,11 +340,9 @@ public class Main extends InputAdapter implements ApplicationListener {
 
     private void restartGame() {
         System.out.println("🔥 Koala touched fire! Restarting...");
-
         // Reset Koala's position and velocity
-        koala.position.set(100, 100);  // Adjust starting position
+        koala.position.set(20, 20);  // Adjust starting position
         koala.velocity.set(0, 0);
-
         // If needed, reset other game elements
     }
 
