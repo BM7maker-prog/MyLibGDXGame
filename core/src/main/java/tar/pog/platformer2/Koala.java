@@ -6,7 +6,7 @@ public class Koala {
         static float WIDTH;
         static float HEIGHT;
         static float MAX_VELOCITY = 20f;// maximum speed the koala can move.
-        static float JUMP_VELOCITY = 80f; //jumping force of koala
+        static float JUMP_VELOCITY = 70f; //jumping force of koala
         static float DAMPING = 0.87f;//reduces movement speed over time, preventing infinite sliding.
 
         enum State {

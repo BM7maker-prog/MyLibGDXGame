@@ -67,7 +67,7 @@ public class Coin implements Disposable {
 // Get Fire's hitbox for collision detection
     public Rectangle getBoundingBox() {
 
-        return new Rectangle(x, y , width , height);
+        return new Rectangle(x + 15, y , width , height);
     }
 
 

@@ -41,7 +41,10 @@ public class Main extends InputAdapter implements ApplicationListener {
     private Koala koala;
     private Fire fire;
     private Coin coin;
-
+    private Fire fire1;
+    private Fire fire2;
+    private Fire fire3;
+    private Fire fire4;
 
     private Pool<Rectangle> rectPool = new Pool<Rectangle>() {
         @Override
@@ -49,7 +52,6 @@ public class Main extends InputAdapter implements ApplicationListener {
             return new Rectangle();
         }
     };
-
 
     private Array<Rectangle> tiles = new Array<Rectangle>();
 
@@ -87,10 +89,13 @@ public class Main extends InputAdapter implements ApplicationListener {
         koala = new Koala();
         koala.position.set(20, 20);
 
-        coin = new Coin(koala.position.x + 20,koala.position.y - 32);
+        coin = new Coin(187,-12);
 
-        fire = new Fire(koala.position.x + 30,koala.position.y - 47);
-
+        fire = new Fire(70,-27);
+        fire1 = new Fire(80,-27);
+        fire2 = new Fire(100,-27);
+        fire3 = new Fire(85,-27);
+        fire4 = new Fire(110,-27);
         debugRenderer = new ShapeRenderer();
 
 
@@ -125,12 +130,18 @@ public class Main extends InputAdapter implements ApplicationListener {
 
         coin.updateCoin(deltaTime);
         fire.updateFire(deltaTime);
-
+        fire1.updateFire(deltaTime);
+        fire2.updateFire(deltaTime);
+        fire3.updateFire(deltaTime);
+        fire4.updateFire(deltaTime);
         batch.begin();
 
         coin.renderCoin(batch);
         fire.renderFire(batch);
-
+        fire1.renderFire(batch);
+        fire2.renderFire(batch);
+        fire3.renderFire(batch);
+        fire4.renderFire(batch);
         batch.end();
         // render debug rectangles
         if (debug) renderDebug();
@@ -243,9 +254,21 @@ public class Main extends InputAdapter implements ApplicationListener {
         if (koalaRect.overlaps(fire.getBoundingBox())) {
             restartGame();  // Call restart function when touching fire
         }
-//        if (koalaRect.overlaps(coin.getBoundingBox())) {
-//            restartGame();
-//        }
+        if (koalaRect.overlaps(fire1.getBoundingBox())) {
+            restartGame();  // Call restart function when touching fire
+        }
+        if (koalaRect.overlaps(fire2.getBoundingBox())) {
+            restartGame();  // Call restart function when touching fire
+        }
+        if (koalaRect.overlaps(fire3.getBoundingBox())) {
+            restartGame();  // Call restart function when touching fire
+        }
+        if (koalaRect.overlaps(fire4.getBoundingBox())) {
+            restartGame();  // Call restart function when touching fire
+        }
+        if (koalaRect.overlaps(coin.getBoundingBox())) {
+            restartGame();
+        }
         rectPool.free(koalaRect);
 
         if (koala.position.y < 0){
@@ -259,7 +282,7 @@ public class Main extends InputAdapter implements ApplicationListener {
         // Apply damping to the velocity on the x-axis so we don't
         // walk infinitely once a key was pressed
         koala.velocity.x *= Koala.DAMPING;
-    }
+    } //koala
 
     private boolean isTouched (float startX, float endX) {
         // Check for touch inputs between startX and endX
@@ -271,7 +294,7 @@ public class Main extends InputAdapter implements ApplicationListener {
             }
         }
         return false;
-    }
+    }//touch events
 
     private void getTiles (int startX, int startY, int endX, int endY, Array<Rectangle> tiles) {
         TiledMapTileLayer layer = (TiledMapTileLayer)map.getLayers().get("walls");
@@ -287,12 +310,13 @@ public class Main extends InputAdapter implements ApplicationListener {
                 }
             }
         }
-    }
+    }//map mangaer
 
     private void renderKoala (float deltaTime) {
         // based on the koala state, get the animation frame
         TextureRegion frame = null;
         switch (koala.state) {
+
             case Standing:
                 frame = stand.getKeyFrame(koala.stateTime);
                 break;
@@ -315,7 +339,7 @@ public class Main extends InputAdapter implements ApplicationListener {
             batch.draw(frame, koala.position.x + Koala.WIDTH, koala.position.y, -Koala.WIDTH, Koala.HEIGHT);
         }
         batch.end();
-    }
+    }//koala
 
     private void renderDebug () {
         debugRenderer.setProjectionMatrix(camera.combined);
@@ -344,7 +368,8 @@ public class Main extends InputAdapter implements ApplicationListener {
         koala.position.set(20, 20);  // Adjust starting position
         koala.velocity.set(0, 0);
         // If needed, reset other game elements
-    }
+    }//koala
+
 
 
     @Override
@@ -356,6 +381,7 @@ public class Main extends InputAdapter implements ApplicationListener {
     @Override
     public void resume () {
     }
+
 
     @Override
     public void resize(int width, int height) {
