@@ -3,9 +3,7 @@ package tar.pog.platformer2;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -23,6 +21,10 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.ScreenUtils;
+
+import tar.pog.platformer2.Helpers.TouchInputHandler;
+import tar.pog.platformer2.Obstacles.Fire;
+import tar.pog.platformer2.Rewards.Coin;
 
 /** Super Mario Brothers-like very basic platformer, using a tile map built using <a href="https://www.mapeditor.org/">Tiled</a> and a
  * tileset and sprites by <a href="http://www.vickiwenderlich.com/">Vicky Wenderlich</a></p>
@@ -45,7 +47,7 @@ public class Main extends InputAdapter implements ApplicationListener {
     private Fire fire2;
     private Fire fire3;
     private Fire fire4;
-
+    private TouchInputHandler touchInputHandler;
     private Pool<Rectangle> rectPool = new Pool<Rectangle>() {
         @Override
         protected Rectangle newObject () {
@@ -62,6 +64,7 @@ public class Main extends InputAdapter implements ApplicationListener {
 
     @Override
     public void create () {
+        touchInputHandler = new TouchInputHandler();
         // load the koala frames, split them, and assign them to Animations
         koalaTexture = new Texture("koalio.png");
         TextureRegion[] regions = TextureRegion.split(koalaTexture, 18, 26)[0];
@@ -157,19 +160,19 @@ public class Main extends InputAdapter implements ApplicationListener {
 
         // check input and apply to velocity & state
         //jumping
-        if (isTouched(0.5f, 1) && koala.grounded) {
+        if (touchInputHandler.isTouched(0.5f, 1) && koala.grounded) {
             koala.velocity.y += Koala.JUMP_VELOCITY;
             koala.state = Koala.State.Jumping;
             koala.grounded = false;
         }
         // turning to the left
-        if (isTouched(0, 0.25f)) {
+        if (touchInputHandler.isTouched(0, 0.25f)) {
             koala.velocity.x = -Koala.MAX_VELOCITY;
             if (koala.grounded) koala.state = Koala.State.Walking;
             koala.facesRight = false;
         }
         //turning to the right
-        if (isTouched(0.25f, 0.5f)) {
+        if (touchInputHandler.isTouched(0.25f, 0.5f)) {
             koala.velocity.x = Koala.MAX_VELOCITY;
             if (koala.grounded) koala.state = Koala.State.Walking;
             koala.facesRight = true;
@@ -269,6 +272,7 @@ public class Main extends InputAdapter implements ApplicationListener {
         if (koalaRect.overlaps(coin.getBoundingBox())) {
             restartGame();
         }
+
         rectPool.free(koalaRect);
 
         if (koala.position.y < 0){
@@ -284,17 +288,6 @@ public class Main extends InputAdapter implements ApplicationListener {
         koala.velocity.x *= Koala.DAMPING;
     } //koala
 
-    private boolean isTouched (float startX, float endX) {
-        // Check for touch inputs between startX and endX
-        // startX/endX are given between 0 (left edge of the screen) and 1 (right edge of the screen)
-        for (int i = 0; i < 2; i++) {
-            float x = Gdx.input.getX(i) / (float)Gdx.graphics.getBackBufferWidth();
-            if (Gdx.input.isTouched(i) && (x >= startX && x <= endX)) {
-                return true;
-            }
-        }
-        return false;
-    }//touch events
 
     private void getTiles (int startX, int startY, int endX, int endY, Array<Rectangle> tiles) {
         TiledMapTileLayer layer = (TiledMapTileLayer)map.getLayers().get("walls");
