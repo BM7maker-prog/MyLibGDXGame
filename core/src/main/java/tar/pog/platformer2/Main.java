@@ -34,6 +34,7 @@ import tar.pog.platformer2.Rewards.Coin;
 public class Main extends InputAdapter implements ApplicationListener {
     /** The player character, has state and state time, */
     private TiledMap map;
+
     private OrthogonalTiledMapRenderer renderer;
     private OrthographicCamera camera;
     private Texture koalaTexture;
@@ -64,9 +65,11 @@ public class Main extends InputAdapter implements ApplicationListener {
 
     @Override
     public void create () {
+
         touchInputHandler = new TouchInputHandler();
         // load the koala frames, split them, and assign them to Animations
         koalaTexture = new Texture("koalio.png");
+
         TextureRegion[] regions = TextureRegion.split(koalaTexture, 18, 26)[0];
         stand = new Animation<TextureRegion>(0, regions[0]);
         jump = new Animation<TextureRegion>(0, regions[1]);
@@ -215,6 +218,7 @@ public class Main extends InputAdapter implements ApplicationListener {
 
         startY = (int)(koala.position.y);
         endY = (int)(koala.position.y + Koala.HEIGHT);
+        getTiles(startX, startY, endX, endY, tiles);
         getTiles(startX, startY, endX, endY, tiles);
         koalaRect.x += koala.velocity.x;
 
@@ -369,6 +373,7 @@ public class Main extends InputAdapter implements ApplicationListener {
     public void dispose () {
         renderer.dispose();
         fire.dispose();
+        map.dispose();
     }
 
     @Override
