@@ -1,5 +1,4 @@
 package tar.pog.platformer2;
-
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
@@ -23,6 +22,7 @@ import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 import tar.pog.platformer2.Helpers.TouchInputHandler;
+import tar.pog.platformer2.Player;
 import tar.pog.platformer2.Obstacles.Fire;
 import tar.pog.platformer2.Rewards.Coin;
 
@@ -37,11 +37,11 @@ public class Main extends InputAdapter implements ApplicationListener {
 
     private OrthogonalTiledMapRenderer renderer;
     private OrthographicCamera camera;
-    private Texture koalaTexture;
+    private Texture playerTexture;
     private Animation<TextureRegion> stand;
     private Animation<TextureRegion> walk;
     private Animation<TextureRegion> jump;
-    private Koala koala;
+    private Player player;
     private Fire fire;
     private Coin coin;
     private Fire fire1;
@@ -65,22 +65,21 @@ public class Main extends InputAdapter implements ApplicationListener {
 
     @Override
     public void create () {
-
         touchInputHandler = new TouchInputHandler();
-        // load the koala frames, split them, and assign them to Animations
-        koalaTexture = new Texture("koalio.png");
+        // load the player frames, split them, and assign them to Animations
+        playerTexture = new Texture("player_run.png");
 
-        TextureRegion[] regions = TextureRegion.split(koalaTexture, 18, 26)[0];
+        TextureRegion[] regions = TextureRegion.split(playerTexture, 16, 16)[0];
         stand = new Animation<TextureRegion>(0, regions[0]);
         jump = new Animation<TextureRegion>(0, regions[1]);
-        walk = new Animation<TextureRegion>(0.15f, regions[2], regions[3], regions[4]);
+        walk = new Animation<TextureRegion>(0.15f, regions[0], regions[1], regions[2], regions[3], regions[4], regions[5]);
         walk.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 
-        // figure out the width and height of the koala for collision
-        // detection and rendering by converting a koala frames pixel
+        // figure out the width and height of the player for collision
+        // detection and rendering by converting a player frames pixel
         // size into world units (1 unit == 16 pixels)
-        Koala.WIDTH = 1 / 16f * regions[0].getRegionWidth();
-        Koala.HEIGHT = 1 / 16f * regions[0].getRegionHeight();
+        Player.WIDTH = 1.5f * (1 / 16f * regions[0].getRegionWidth());
+        Player.HEIGHT = 1.5f * (1 / 16f * regions[0].getRegionHeight());
 
         // load the map, set the unit scale to 1/16 (1 unit == 16 pixels)
         map = new TmxMapLoader().load("level1.tmx");
@@ -91,9 +90,9 @@ public class Main extends InputAdapter implements ApplicationListener {
         camera.setToOrtho(false, 30, 20);
         camera.update();
 
-        // create the Koala we want to move around the world
-        koala = new Koala();
-        koala.position.set(20, 20);
+        // create the Player we want to move around the world
+        player = new Player();
+        player.position.set(20, 20);
 
         coin = new Coin(187,-12);
 
@@ -103,8 +102,6 @@ public class Main extends InputAdapter implements ApplicationListener {
         fire3 = new Fire(85,-27);
         fire4 = new Fire(110,-27);
         debugRenderer = new ShapeRenderer();
-
-
     }
 
 
@@ -117,11 +114,11 @@ public class Main extends InputAdapter implements ApplicationListener {
         // get the delta time
         float deltaTime = Gdx.graphics.getDeltaTime();
 
-        // update the koala (process input, collision detection, position update)
-        updateKoala(deltaTime);
+        // update the player (process input, collision detection, position update)
+        updatePlayer(deltaTime);
 
-        // let the camera follow the koala, x-axis only
-        camera.position.x = koala.position.x;
+        // let the camera follow the player, x-axis only
+        camera.position.x = player.position.x;
         camera.update();
 
         // set the TiledMapRenderer view based on what the
@@ -129,8 +126,8 @@ public class Main extends InputAdapter implements ApplicationListener {
         renderer.setView(camera);
         renderer.render();
 
-        // render the koala
-        renderKoala(deltaTime);
+        // render the player
+        renderPlayer(deltaTime);
 
         Batch batch = renderer.getBatch();
 
@@ -153,104 +150,104 @@ public class Main extends InputAdapter implements ApplicationListener {
         if (debug) renderDebug();
     }
 
-    public void updateKoala (float deltaTime) {
+    public void updatePlayer (float deltaTime) {
         if (deltaTime == 0) return;
 
         if (deltaTime > 0.1f)
             deltaTime = 0.1f;
 
-        koala.stateTime += deltaTime;
+        player.stateTime += deltaTime;
 
         // check input and apply to velocity & state
         //jumping
-        if (touchInputHandler.isTouched(0.5f, 1) && koala.grounded) {
-            koala.velocity.y += Koala.JUMP_VELOCITY;
-            koala.state = Koala.State.Jumping;
-            koala.grounded = false;
+        if (touchInputHandler.isTouched(0.5f, 1) && player.grounded) {
+            player.velocity.y += Player.JUMP_VELOCITY;
+            player.state = Player.State.Jumping;
+            player.grounded = false;
         }
         // turning to the left
         if (touchInputHandler.isTouched(0, 0.25f)) {
-            koala.velocity.x = -Koala.MAX_VELOCITY;
-            if (koala.grounded) koala.state = Koala.State.Walking;
-            koala.facesRight = false;
+            player.velocity.x = -Player.MAX_VELOCITY;
+            if (player.grounded) player.state = Player.State.Walking;
+            player.facesRight = false;
         }
         //turning to the right
         if (touchInputHandler.isTouched(0.25f, 0.5f)) {
-            koala.velocity.x = Koala.MAX_VELOCITY;
-            if (koala.grounded) koala.state = Koala.State.Walking;
-            koala.facesRight = true;
+            player.velocity.x = Player.MAX_VELOCITY;
+            if (player.grounded) player.state = Player.State.Walking;
+            player.facesRight = true;
         }
 
 //        if (Gdx.input.isKeyJustPressed(Keys.B))
 //            debug = !debug;
 
         // apply gravity if we are falling
-        koala.velocity.add(0, GRAVITY);
+        player.velocity.add(0, GRAVITY);
 
         // clamp the velocity to the maximum, x-axis only
-        koala.velocity.x = MathUtils.clamp(koala.velocity.x,
-            -Koala.MAX_VELOCITY, Koala.MAX_VELOCITY);
+        player.velocity.x = MathUtils.clamp(player.velocity.x,
+            -Player.MAX_VELOCITY, Player.MAX_VELOCITY);
 
         // If the velocity is < 1, set it to 0 and set state to Standing
-        if (Math.abs(koala.velocity.x) < 1) {
-            koala.velocity.x = 0;
-            if (koala.grounded) koala.state = Koala.State.Standing;
+        if (Math.abs(player.velocity.x) < 1) {
+            player.velocity.x = 0;
+            if (player.grounded) player.state = Player.State.Standing;
         }
 
         // multiply by delta time so we know how far we go
         // in this frame
-        koala.velocity.scl(deltaTime);
+        player.velocity.scl(deltaTime);
 
         // perform collision detection & response, on each axis, separately
-        // if the koala is moving right, check the tiles to the right of it's
+        // if the player is moving right, check the tiles to the right of it's
         // right bounding box edge, otherwise check the ones to the left
-        Rectangle koalaRect = rectPool.obtain();
+        Rectangle playerRect = rectPool.obtain();
 
-        koalaRect.set(koala.position.x, koala.position.y, Koala.WIDTH, Koala.HEIGHT);
+        playerRect.set(player.position.x, player.position.y, Player.WIDTH, Player.HEIGHT);
 
         int startX, startY, endX, endY;
 
-        if (koala.velocity.x > 0) {
-            startX = endX = (int)(koala.position.x + Koala.WIDTH + koala.velocity.x);
+        if (player.velocity.x > 0) {
+            startX = endX = (int)(player.position.x + Player.WIDTH + player.velocity.x);
         } else {
-            startX = endX = (int)(koala.position.x + koala.velocity.x);
+            startX = endX = (int)(player.position.x + player.velocity.x);
         }
 
-        startY = (int)(koala.position.y);
-        endY = (int)(koala.position.y + Koala.HEIGHT);
+        startY = (int)(player.position.y);
+        endY = (int)(player.position.y + Player.HEIGHT);
         getTiles(startX, startY, endX, endY, tiles);
         getTiles(startX, startY, endX, endY, tiles);
-        koalaRect.x += koala.velocity.x;
+        playerRect.x += player.velocity.x;
 
         for (Rectangle tile : tiles) {
-            if (koalaRect.overlaps(tile)) {
-                koala.velocity.x = 0;
+            if (playerRect.overlaps(tile)) {
+                player.velocity.x = 0;
                 break;
             }
         }
-        koalaRect.x = koala.position.x;
+        playerRect.x = player.position.x;
 
-        // if the koala is moving upwards, check the tiles to the top of its
+        // if the player is moving upwards, check the tiles to the top of its
         // top bounding box edge, otherwise check the ones to the bottom
-        if (koala.velocity.y > 0) {
-            startY = endY = (int)(koala.position.y + Koala.HEIGHT + koala.velocity.y);
+        if (player.velocity.y > 0) {
+            startY = endY = (int)(player.position.y + Player.HEIGHT + player.velocity.y);
         } else {
-            startY = endY = (int)(koala.position.y + koala.velocity.y);
+            startY = endY = (int)(player.position.y + player.velocity.y);
         }
-        startX = (int)(koala.position.x);
-        endX = (int)(koala.position.x + Koala.WIDTH);
+        startX = (int)(player.position.x);
+        endX = (int)(player.position.x + Player.WIDTH);
         getTiles(startX, startY, endX, endY, tiles);
-        koalaRect.y += koala.velocity.y;
+        playerRect.y += player.velocity.y;
 
         for (Rectangle tile : tiles) {
-            if (koalaRect.overlaps(tile)) {
-                if (koala.velocity.y > 0) {
-                    koala.position.y = tile.y - Koala.HEIGHT;
+            if (playerRect.overlaps(tile)) {
+                if (player.velocity.y > 0) {
+                    player.position.y = tile.y - Player.HEIGHT;
                 } else {
-                    koala.position.y = tile.y + tile.height;
-                    koala.grounded = true;
+                    player.position.y = tile.y + tile.height;
+                    player.grounded = true;
                 }
-                koala.velocity.y = 0;
+                player.velocity.y = 0;
                 break;
             }
         }
@@ -258,39 +255,39 @@ public class Main extends InputAdapter implements ApplicationListener {
 // 🔥 Check for collision with Fire
 //        Rectangle fireRect = new Rectangle(fire.getX(), fire.getY(), Fire.WIDTH, Fire.HEIGHT);
 
-        if (koalaRect.overlaps(fire.getBoundingBox())) {
+        if (playerRect.overlaps(fire.getBoundingBox())) {
             restartGame();  // Call restart function when touching fire
         }
-        if (koalaRect.overlaps(fire1.getBoundingBox())) {
+        if (playerRect.overlaps(fire1.getBoundingBox())) {
             restartGame();  // Call restart function when touching fire
         }
-        if (koalaRect.overlaps(fire2.getBoundingBox())) {
+        if (playerRect.overlaps(fire2.getBoundingBox())) {
             restartGame();  // Call restart function when touching fire
         }
-        if (koalaRect.overlaps(fire3.getBoundingBox())) {
+        if (playerRect.overlaps(fire3.getBoundingBox())) {
             restartGame();  // Call restart function when touching fire
         }
-        if (koalaRect.overlaps(fire4.getBoundingBox())) {
+        if (playerRect.overlaps(fire4.getBoundingBox())) {
             restartGame();  // Call restart function when touching fire
         }
-        if (koalaRect.overlaps(coin.getBoundingBox())) {
+        if (playerRect.overlaps(coin.getBoundingBox())) {
             restartGame();
         }
 
-        rectPool.free(koalaRect);
+        rectPool.free(playerRect);
 
-        if (koala.position.y < 0){
+        if (player.position.y < 0){
             restartGame();
         }
         // unscale the velocity by the inverse delta time and set
         // the latest position
-        koala.position.add(koala.velocity);
-        koala.velocity.scl(1 / deltaTime);
+        player.position.add(player.velocity);
+        player.velocity.scl(1 / deltaTime);
 
         // Apply damping to the velocity on the x-axis so we don't
         // walk infinitely once a key was pressed
-        koala.velocity.x *= Koala.DAMPING;
-    } //koala
+        player.velocity.x *= Player.DAMPING;
+    } //player
 
 
     private void getTiles (int startX, int startY, int endX, int endY, Array<Rectangle> tiles) {
@@ -307,43 +304,43 @@ public class Main extends InputAdapter implements ApplicationListener {
                 }
             }
         }
-    }//map mangaer
+    }//map manager
 
-    private void renderKoala (float deltaTime) {
-        // based on the koala state, get the animation frame
+    private void renderPlayer (float deltaTime) {
+        // based on the player state, get the animation frame
         TextureRegion frame = null;
-        switch (koala.state) {
+        switch (player.state) {
 
             case Standing:
-                frame = stand.getKeyFrame(koala.stateTime);
+                frame = stand.getKeyFrame(player.stateTime);
                 break;
             case Walking:
-                frame = walk.getKeyFrame(koala.stateTime);
+                frame = walk.getKeyFrame(player.stateTime);
                 break;
             case Jumping:
-                frame = jump.getKeyFrame(koala.stateTime);
+                frame = jump.getKeyFrame(player.stateTime);
                 break;
         }
 
-        // draw the koala, depending on the current velocity
-        // on the x-axis, draw the koala facing either right
+        // draw the player, depending on the current velocity
+        // on the x-axis, draw the player facing either right
         // or left
         Batch batch = renderer.getBatch();
         batch.begin();
-        if (koala.facesRight) {
-            batch.draw(frame, koala.position.x, koala.position.y, Koala.WIDTH, Koala.HEIGHT);
+        if (player.facesRight) {
+            batch.draw(frame, player.position.x, player.position.y, Player.WIDTH, Player.HEIGHT);
         } else {
-            batch.draw(frame, koala.position.x + Koala.WIDTH, koala.position.y, -Koala.WIDTH, Koala.HEIGHT);
+            batch.draw(frame, player.position.x + Player.WIDTH, player.position.y, -Player.WIDTH, Player.HEIGHT);
         }
         batch.end();
-    }//koala
+    }//player
 
     private void renderDebug () {
         debugRenderer.setProjectionMatrix(camera.combined);
         debugRenderer.begin(ShapeType.Line);
 
         debugRenderer.setColor(Color.RED);
-        debugRenderer.rect(koala.position.x, koala.position.y, Koala.WIDTH, Koala.HEIGHT);
+        debugRenderer.rect(player.position.x, player.position.y, Player.WIDTH, Player.HEIGHT);
 
         debugRenderer.setColor(Color.YELLOW);
         TiledMapTileLayer layer = (TiledMapTileLayer)map.getLayers().get("walls");
@@ -360,12 +357,12 @@ public class Main extends InputAdapter implements ApplicationListener {
     }
 
     private void restartGame() {
-        System.out.println("🔥 Koala touched fire! Restarting...");
-        // Reset Koala's position and velocity
-        koala.position.set(20, 20);  // Adjust starting position
-        koala.velocity.set(0, 0);
+        System.out.println("🔥 Player touched fire! Restarting...");
+        // Reset Player's position and velocity
+        player.position.set(20, 20);  // Adjust starting position
+        player.velocity.set(0, 0);
         // If needed, reset other game elements
-    }//koala
+    }//player
 
 
 

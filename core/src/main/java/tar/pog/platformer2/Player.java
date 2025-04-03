@@ -2,7 +2,7 @@ package tar.pog.platformer2;
 
 import com.badlogic.gdx.math.Vector2;
 
-public class Koala {
+public class Player {
     static float WIDTH;
     static float HEIGHT;
     static float MAX_VELOCITY = 12f;// maximum speed the koala can move.
@@ -22,7 +22,7 @@ public class Koala {
     boolean facesRight = true;
     boolean grounded = false;
 
-    public Koala(){
+    public Player(){
 
     }
 
