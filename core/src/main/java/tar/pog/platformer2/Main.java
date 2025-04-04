@@ -1,4 +1,5 @@
 package tar.pog.platformer2;
+
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
@@ -26,13 +27,8 @@ import tar.pog.platformer2.Player;
 import tar.pog.platformer2.Obstacles.Fire;
 import tar.pog.platformer2.Rewards.Coin;
 
-/** Super Mario Brothers-like very basic platformer, using a tile map built using <a href="https://www.mapeditor.org/">Tiled</a> and a
- * tileset and sprites by <a href="http://www.vickiwenderlich.com/">Vicky Wenderlich</a></p>
- *
- * Shows simple platformer collision detection as well as on-the-fly map modifications through destructible blocks!
- * @author mzechner */
 public class Main extends InputAdapter implements ApplicationListener {
-    /** The player character, has state and state time, */
+
     private TiledMap map;
 
     private OrthogonalTiledMapRenderer renderer;
@@ -146,10 +142,20 @@ public class Main extends InputAdapter implements ApplicationListener {
         fire1.renderFire(batch);
         fire2.renderFire(batch);
         fire3.renderFire(batch);
-        fire4.renderFire(batch);
-        touchInputHandler.render(batch); // Render the buttons
+        fire4.renderFire(batch);// Render the buttons
         batch.end();
-        // render debug rectangles
+
+
+
+        // 🔥 Fix: Set projection matrix for screen-space UI (like buttons)
+        OrthographicCamera uiCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        uiCamera.setToOrtho(false); // Make (0,0) bottom-left
+        uiCamera.update();
+
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        touchInputHandler.render(batch);
+        batch.end();
         if (debug) renderDebug();
     }
 
@@ -163,26 +169,23 @@ public class Main extends InputAdapter implements ApplicationListener {
 
         // check input and apply to velocity & state
         //jumping
-        if (touchInputHandler.isTouched(0.5f, 1) && player.grounded) {
+        if (touchInputHandler.isUpwardButtonTouched() && player.grounded) {
             player.velocity.y += Player.JUMP_VELOCITY;
             player.state = Player.State.Jumping;
             player.grounded = false;
         }
         // turning to the left
-        if (touchInputHandler.isTouched(0, 0.25f)) {
+        if (touchInputHandler.isLeftButtonTouched()) {
             player.velocity.x = -Player.MAX_VELOCITY;
             if (player.grounded) player.state = Player.State.Walking;
             player.facesRight = false;
         }
         //turning to the right
-        if (touchInputHandler.isTouched(0.25f, 0.5f)) {
+        if (touchInputHandler.isRightButtonTouched()) {
             player.velocity.x = Player.MAX_VELOCITY;
             if (player.grounded) player.state = Player.State.Walking;
             player.facesRight = true;
         }
-
-//        if (Gdx.input.isKeyJustPressed(Keys.B))
-//            debug = !debug;
 
         // apply gravity if we are falling
         player.velocity.add(0, GRAVITY);
@@ -340,7 +343,7 @@ public class Main extends InputAdapter implements ApplicationListener {
 
     private void renderDebug () {
         debugRenderer.setProjectionMatrix(camera.combined);
-        debugRenderer.begin(ShapeType.Line);
+        debugRenderer.begin(ShapeRenderer.ShapeType.Line);
 
         debugRenderer.setColor(Color.RED);
         debugRenderer.rect(player.position.x, player.position.y, Player.WIDTH, Player.HEIGHT);

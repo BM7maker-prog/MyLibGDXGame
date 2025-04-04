@@ -10,66 +10,73 @@ public class TouchInputHandler {
     private Sprite buttonRight;
     private Sprite buttonLeft;
     private Sprite buttonUpward;
+    private float buttonSize = 220f; // Size in pixels
+    private float padding = 60f;
 
     public TouchInputHandler() {
-        buttonRight = new Sprite(new Texture("button_to_right.png"));
-        buttonLeft = new Sprite(new Texture("buttonLeft.png"));
-        buttonUpward = new Sprite(new Texture("button_upward.png"));
+        // Load textures with error handling
+        buttonRight = new Sprite(new Texture("right.png"));
+        buttonLeft = new Sprite(new Texture("left.png"));
+        buttonUpward = new Sprite(new Texture("up.png"));
 
-        // Set button positions and sizes
-        buttonRight.setPosition(Gdx.graphics.getWidth() - buttonRight.getWidth() - 20, 20);
-        buttonLeft.setPosition(20, 20);
-        buttonUpward.setPosition(Gdx.graphics.getWidth() / 2 - buttonUpward.getWidth() / 2, Gdx.graphics.getHeight() - buttonUpward.getHeight() - 20);
+        // Set button sizes
+        buttonRight.setSize(buttonSize, buttonSize);
+        buttonLeft.setSize(buttonSize, buttonSize);
+        buttonUpward.setSize(buttonSize, buttonSize);
+
+        // Position buttons (left, right at bottom, jump at top-right)
+        buttonLeft.setPosition(padding + 25f, padding);
+        buttonRight.setPosition(padding * 2 + buttonSize+25f, padding);
+        buttonUpward.setPosition(Gdx.graphics.getWidth() - buttonSize - padding -90f,
+            padding);
     }
 
     public void render(Batch batch) {
-        buttonRight.draw(batch);
+        // Draw buttons with transparency when pressed
+        float alpha = 1f;
+        if (isLeftButtonTouched()) {
+            alpha = 0.7f;
+            buttonLeft.setAlpha(alpha);
+        } else {
+            buttonLeft.setAlpha(1f);
+        }
         buttonLeft.draw(batch);
+
+        if (isRightButtonTouched()) {
+            alpha = 0.7f;
+            buttonRight.setAlpha(alpha);
+        } else {
+            buttonRight.setAlpha(1f);
+        }
+        buttonRight.draw(batch);
+
+        if (isUpwardButtonTouched()) {
+            alpha = 0.7f;
+            buttonUpward.setAlpha(alpha);
+        } else {
+            buttonUpward.setAlpha(1f);
+        }
         buttonUpward.draw(batch);
     }
 
-    public boolean isTouched(float startX, float endX) {
-        for (int i = 0; i < 2; i++) {
-            float x = Gdx.input.getX(i) / (float) Gdx.graphics.getBackBufferWidth();
-            if (Gdx.input.isTouched(i) && (x >= startX && x <= endX)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public boolean isRightButtonTouched() {
-        for (int i = 0; i < 2; i++) {
-            if (Gdx.input.isTouched(i)) {
-                float x = Gdx.input.getX(i);
-                float y = Gdx.graphics.getHeight() - Gdx.input.getY(i); // Convert to screen coordinates
-                if (buttonRight.getBoundingRectangle().contains(x, y)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return checkButtonTouch(buttonRight);
     }
 
     public boolean isLeftButtonTouched() {
-        for (int i = 0; i < 2; i++) {
-            if (Gdx.input.isTouched(i)) {
-                float x = Gdx.input.getX(i);
-                float y = Gdx.graphics.getHeight() - Gdx.input.getY(i); // Convert to screen coordinates
-                if (buttonLeft.getBoundingRectangle().contains(x, y)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return checkButtonTouch(buttonLeft);
     }
 
     public boolean isUpwardButtonTouched() {
-        for (int i = 0; i < 2; i++) {
+        return checkButtonTouch(buttonUpward);
+    }
+
+    private boolean checkButtonTouch(Sprite button) {
+        for (int i = 0; i < 5; i++) { // Check up to 5 simultaneous touches
             if (Gdx.input.isTouched(i)) {
                 float x = Gdx.input.getX(i);
                 float y = Gdx.graphics.getHeight() - Gdx.input.getY(i); // Convert to screen coordinates
-                if (buttonUpward.getBoundingRectangle().contains(x, y)) {
+                if (button.getBoundingRectangle().contains(x, y)) {
                     return true;
                 }
             }
