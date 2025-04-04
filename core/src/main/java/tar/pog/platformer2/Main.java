@@ -38,6 +38,7 @@ public class Main extends InputAdapter implements ApplicationListener {
     private OrthogonalTiledMapRenderer renderer;
     private OrthographicCamera camera;
     private Texture playerTexture;
+    private Texture playerTextureStand;
     private Animation<TextureRegion> stand;
     private Animation<TextureRegion> walk;
     private Animation<TextureRegion> jump;
@@ -68,9 +69,10 @@ public class Main extends InputAdapter implements ApplicationListener {
         touchInputHandler = new TouchInputHandler();
         // load the player frames, split them, and assign them to Animations
         playerTexture = new Texture("player_run.png");
-
+        playerTextureStand = new Texture("player_standing.png");
+        TextureRegion[] regions_forStanding = TextureRegion.split(playerTextureStand, 16, 16)[0];
         TextureRegion[] regions = TextureRegion.split(playerTexture, 16, 16)[0];
-        stand = new Animation<TextureRegion>(0, regions[0]);
+        stand = new Animation<TextureRegion>(0.15f, regions_forStanding[0],regions_forStanding[1], regions_forStanding[2], regions_forStanding[3]);
         jump = new Animation<TextureRegion>(0, regions[1]);
         walk = new Animation<TextureRegion>(0.15f, regions[0], regions[1], regions[2], regions[3], regions[4], regions[5]);
         walk.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
@@ -145,6 +147,7 @@ public class Main extends InputAdapter implements ApplicationListener {
         fire2.renderFire(batch);
         fire3.renderFire(batch);
         fire4.renderFire(batch);
+        touchInputHandler.render(batch); // Render the buttons
         batch.end();
         // render debug rectangles
         if (debug) renderDebug();

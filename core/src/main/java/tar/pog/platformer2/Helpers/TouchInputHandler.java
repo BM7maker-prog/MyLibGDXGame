@@ -13,7 +13,7 @@ public class TouchInputHandler {
 
     public TouchInputHandler() {
         buttonRight = new Sprite(new Texture("button_to_right.png"));
-        buttonLeft = new Sprite(new Texture("button_to_left.png"));
+        buttonLeft = new Sprite(new Texture("buttonLeft.png"));
         buttonUpward = new Sprite(new Texture("button_upward.png"));
 
         // Set button positions and sizes
