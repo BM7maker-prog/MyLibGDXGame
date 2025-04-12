@@ -22,6 +22,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.ScreenUtils;
 
+import tar.pog.platformer2.Helpers.TileManager;
 import tar.pog.platformer2.Helpers.TouchInputHandler;
 import tar.pog.platformer2.Player;
 import tar.pog.platformer2.Obstacles.Fire;
@@ -59,7 +60,7 @@ public class Main extends InputAdapter implements ApplicationListener {
 
     private boolean debug = false;
     private ShapeRenderer debugRenderer;
-
+    private TileManager tileManager;
     @Override
     public void create () {
         touchInputHandler = new TouchInputHandler();
@@ -82,6 +83,7 @@ public class Main extends InputAdapter implements ApplicationListener {
         // load the map, set the unit scale to 1/16 (1 unit == 16 pixels)
         map = new TmxMapLoader().load("level1.tmx");
         renderer = new OrthogonalTiledMapRenderer(map, 1 / 16f);
+        tileManager = new TileManager(map);
 
         // create an orthographic camera, shows us 30x20 units of the world
         camera = new OrthographicCamera();
@@ -221,8 +223,7 @@ public class Main extends InputAdapter implements ApplicationListener {
 
         startY = (int)(player.position.y);
         endY = (int)(player.position.y + Player.HEIGHT);
-        getTiles(startX, startY, endX, endY, tiles);
-        getTiles(startX, startY, endX, endY, tiles);
+        tileManager.getTiles(startX, startY, endX, endY, tiles);
         playerRect.x += player.velocity.x;
 
         for (Rectangle tile : tiles) {
@@ -242,7 +243,7 @@ public class Main extends InputAdapter implements ApplicationListener {
         }
         startX = (int)(player.position.x);
         endX = (int)(player.position.x + Player.WIDTH);
-        getTiles(startX, startY, endX, endY, tiles);
+        tileManager.getTiles(startX, startY, endX, endY, tiles);
         playerRect.y += player.velocity.y;
 
         for (Rectangle tile : tiles) {
@@ -296,21 +297,7 @@ public class Main extends InputAdapter implements ApplicationListener {
     } //player
 
 
-    private void getTiles (int startX, int startY, int endX, int endY, Array<Rectangle> tiles) {
-        TiledMapTileLayer layer = (TiledMapTileLayer)map.getLayers().get("walls");
-        rectPool.freeAll(tiles);
-        tiles.clear();
-        for (int y = startY; y <= endY; y++) {
-            for (int x = startX; x <= endX; x++) {
-                Cell cell = layer.getCell(x, y);
-                if (cell != null) {
-                    Rectangle rect = rectPool.obtain();
-                    rect.set(x, y, 1, 1);
-                    tiles.add(rect);
-                }
-            }
-        }
-    }//map manager
+
 
     private void renderPlayer (float deltaTime) {
         // based on the player state, get the animation frame
