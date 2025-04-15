@@ -16,22 +16,18 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.ScreenUtils;
-
 import tar.pog.platformer2.Helpers.TileManager;
 import tar.pog.platformer2.Helpers.TouchInputHandler;
-import tar.pog.platformer2.Player;
 import tar.pog.platformer2.Obstacles.Fire;
 import tar.pog.platformer2.Rewards.Coin;
 
 public class Main extends InputAdapter implements ApplicationListener {
 
     private TiledMap map;
-
     private OrthogonalTiledMapRenderer renderer;
     private OrthographicCamera camera;
     private Texture playerTexture;
@@ -49,294 +45,114 @@ public class Main extends InputAdapter implements ApplicationListener {
     private TouchInputHandler touchInputHandler;
     private Pool<Rectangle> rectPool = new Pool<Rectangle>() {
         @Override
-        protected Rectangle newObject () {
+        protected Rectangle newObject() {
             return new Rectangle();
         }
     };
-
     private Array<Rectangle> tiles = new Array<Rectangle>();
-
-    private static final float GRAVITY = -2.5f;
-
     private boolean debug = false;
     private ShapeRenderer debugRenderer;
     private TileManager tileManager;
+
     @Override
-    public void create () {
+    public void create() {
         touchInputHandler = new TouchInputHandler();
-        // load the player frames, split them, and assign them to Animations
+        // Load player frames, split them, and assign to animations
         playerTexture = new Texture("player_run.png");
         playerTextureStand = new Texture("player_standing.png");
         TextureRegion[] regions_forStanding = TextureRegion.split(playerTextureStand, 16, 16)[0];
         TextureRegion[] regions = TextureRegion.split(playerTexture, 16, 16)[0];
-        stand = new Animation<TextureRegion>(0.15f, regions_forStanding[0],regions_forStanding[1], regions_forStanding[2], regions_forStanding[3]);
+        stand = new Animation<TextureRegion>(0.15f, regions_forStanding[0], regions_forStanding[1], regions_forStanding[2], regions_forStanding[3]);
         jump = new Animation<TextureRegion>(0, regions[1]);
         walk = new Animation<TextureRegion>(0.15f, regions[0], regions[1], regions[2], regions[3], regions[4], regions[5]);
         walk.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 
-        // figure out the width and height of the player for collision
-        // detection and rendering by converting a player frames pixel
-        // size into world units (1 unit == 16 pixels)
+        // Set player dimensions
         Player.WIDTH = 1.5f * (1 / 16f * regions[0].getRegionWidth());
         Player.HEIGHT = 1.5f * (1 / 16f * regions[0].getRegionHeight());
 
-        // load the map, set the unit scale to 1/16 (1 unit == 16 pixels)
+        // Load map and set renderer
         map = new TmxMapLoader().load("level1.tmx");
         renderer = new OrthogonalTiledMapRenderer(map, 1 / 16f);
         tileManager = new TileManager(map);
 
-        // create an orthographic camera, shows us 30x20 units of the world
+        // Create camera
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 30, 20);
         camera.update();
 
-        // create the Player we want to move around the world
-        player = new Player();
+        // Create fire and coin objects
+        fire = new Fire(70, -27);
+        fire1 = new Fire(80, -27);
+        fire2 = new Fire(100, -27);
+        fire3 = new Fire(85, -27);
+        fire4 = new Fire(110, -27);
+        coin = new Coin(187, -12);
+
+        // Create player with dependencies
+        Fire[] fires = {fire, fire1, fire2, fire3, fire4};
+        player = new Player(touchInputHandler, tileManager, fires, coin, rectPool, tiles, stand, walk, jump);
         player.position.set(20, 20);
 
-        coin = new Coin(187,-12);
-
-        fire = new Fire(70,-27);
-        fire1 = new Fire(80,-27);
-        fire2 = new Fire(100,-27);
-        fire3 = new Fire(85,-27);
-        fire4 = new Fire(110,-27);
         debugRenderer = new ShapeRenderer();
     }
 
-
     @Override
-    public void render () {
-        // clear the screen
+    public void render() {
+        // Clear the screen
         ScreenUtils.clear(0.5f, 0.7f, 1, 1);
 
-
-        // get the delta time
+        // Get delta time
         float deltaTime = Gdx.graphics.getDeltaTime();
 
-        // update the player (process input, collision detection, position update)
-        updatePlayer(deltaTime);
+        // Update player
+        player.update(deltaTime);
 
-        // let the camera follow the player, x-axis only
+        // Camera follows player (x-axis only)
         camera.position.x = player.position.x;
         camera.update();
 
-        // set the TiledMapRenderer view based on what the
-        // camera sees, and render the map
+        // Render map
         renderer.setView(camera);
         renderer.render();
 
-        // render the player
-        renderPlayer(deltaTime);
-
+        // Render game objects
         Batch batch = renderer.getBatch();
-
+        batch.begin();
+        player.render(batch); // Call player's render method
         coin.updateCoin(deltaTime);
         fire.updateFire(deltaTime);
         fire1.updateFire(deltaTime);
         fire2.updateFire(deltaTime);
         fire3.updateFire(deltaTime);
         fire4.updateFire(deltaTime);
-        batch.begin();
-
         coin.renderCoin(batch);
         fire.renderFire(batch);
         fire1.renderFire(batch);
         fire2.renderFire(batch);
         fire3.renderFire(batch);
-        fire4.renderFire(batch);// Render the buttons
+        fire4.renderFire(batch);
         batch.end();
 
-
-
-        // 🔥 Fix: Set projection matrix for screen-space UI (like buttons)
+        // Render UI (buttons)
         OrthographicCamera uiCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        uiCamera.setToOrtho(false); // Make (0,0) bottom-left
+        uiCamera.setToOrtho(false);
         uiCamera.update();
-
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         touchInputHandler.render(batch);
         batch.end();
+
         if (debug) renderDebug();
     }
 
-    public void updatePlayer (float deltaTime) {
-        if (deltaTime == 0) return;
-
-        if (deltaTime > 0.1f)
-            deltaTime = 0.1f;
-
-        player.stateTime += deltaTime;
-
-        // check input and apply to velocity & state
-        //jumping
-        if (touchInputHandler.isUpwardButtonTouched() && player.grounded) {
-            player.velocity.y += Player.JUMP_VELOCITY;
-            player.state = Player.State.Jumping;
-            player.grounded = false;
-        }
-        // turning to the left
-        if (touchInputHandler.isLeftButtonTouched()) {
-            player.velocity.x = -Player.MAX_VELOCITY;
-            if (player.grounded) player.state = Player.State.Walking;
-            player.facesRight = false;
-        }
-        //turning to the right
-        if (touchInputHandler.isRightButtonTouched()) {
-            player.velocity.x = Player.MAX_VELOCITY;
-            if (player.grounded) player.state = Player.State.Walking;
-            player.facesRight = true;
-        }
-
-        // apply gravity if we are falling
-        player.velocity.add(0, GRAVITY);
-
-        // clamp the velocity to the maximum, x-axis only
-        player.velocity.x = MathUtils.clamp(player.velocity.x,
-            -Player.MAX_VELOCITY, Player.MAX_VELOCITY);
-
-        // If the velocity is < 1, set it to 0 and set state to Standing
-        if (Math.abs(player.velocity.x) < 1) {
-            player.velocity.x = 0;
-            if (player.grounded) player.state = Player.State.Standing;
-        }
-
-        // multiply by delta time so we know how far we go
-        // in this frame
-        player.velocity.scl(deltaTime);
-
-        // perform collision detection & response, on each axis, separately
-        // if the player is moving right, check the tiles to the right of it's
-        // right bounding box edge, otherwise check the ones to the left
-        Rectangle playerRect = rectPool.obtain();
-
-        playerRect.set(player.position.x, player.position.y, Player.WIDTH, Player.HEIGHT);
-
-        int startX, startY, endX, endY;
-
-        if (player.velocity.x > 0) {
-            startX = endX = (int)(player.position.x + Player.WIDTH + player.velocity.x);
-        } else {
-            startX = endX = (int)(player.position.x + player.velocity.x);
-        }
-
-        startY = (int)(player.position.y);
-        endY = (int)(player.position.y + Player.HEIGHT);
-        tileManager.getTiles(startX, startY, endX, endY, tiles);
-        playerRect.x += player.velocity.x;
-
-        for (Rectangle tile : tiles) {
-            if (playerRect.overlaps(tile)) {
-                player.velocity.x = 0;
-                break;
-            }
-        }
-        playerRect.x = player.position.x;
-
-        // if the player is moving upwards, check the tiles to the top of its
-        // top bounding box edge, otherwise check the ones to the bottom
-        if (player.velocity.y > 0) {
-            startY = endY = (int)(player.position.y + Player.HEIGHT + player.velocity.y);
-        } else {
-            startY = endY = (int)(player.position.y + player.velocity.y);
-        }
-        startX = (int)(player.position.x);
-        endX = (int)(player.position.x + Player.WIDTH);
-        tileManager.getTiles(startX, startY, endX, endY, tiles);
-        playerRect.y += player.velocity.y;
-
-        for (Rectangle tile : tiles) {
-            if (playerRect.overlaps(tile)) {
-                if (player.velocity.y > 0) {
-                    player.position.y = tile.y - Player.HEIGHT;
-                } else {
-                    player.position.y = tile.y + tile.height;
-                    player.grounded = true;
-                }
-                player.velocity.y = 0;
-                break;
-            }
-        }
-
-// 🔥 Check for collision with Fire
-//        Rectangle fireRect = new Rectangle(fire.getX(), fire.getY(), Fire.WIDTH, Fire.HEIGHT);
-
-        if (playerRect.overlaps(fire.getBoundingBox())) {
-            restartGame();  // Call restart function when touching fire
-        }
-        if (playerRect.overlaps(fire1.getBoundingBox())) {
-            restartGame();  // Call restart function when touching fire
-        }
-        if (playerRect.overlaps(fire2.getBoundingBox())) {
-            restartGame();  // Call restart function when touching fire
-        }
-        if (playerRect.overlaps(fire3.getBoundingBox())) {
-            restartGame();  // Call restart function when touching fire
-        }
-        if (playerRect.overlaps(fire4.getBoundingBox())) {
-            restartGame();  // Call restart function when touching fire
-        }
-        if (playerRect.overlaps(coin.getBoundingBox())) {
-            restartGame();
-        }
-
-        rectPool.free(playerRect);
-
-        if (player.position.y < 0){
-            restartGame();
-        }
-        // unscale the velocity by the inverse delta time and set
-        // the latest position
-        player.position.add(player.velocity);
-        player.velocity.scl(1 / deltaTime);
-
-        // Apply damping to the velocity on the x-axis so we don't
-        // walk infinitely once a key was pressed
-        player.velocity.x *= Player.DAMPING;
-    } //player
-
-
-
-
-    private void renderPlayer (float deltaTime) {
-        // based on the player state, get the animation frame
-        TextureRegion frame = null;
-        switch (player.state) {
-
-            case Standing:
-                frame = stand.getKeyFrame(player.stateTime);
-                break;
-            case Walking:
-                frame = walk.getKeyFrame(player.stateTime);
-                break;
-            case Jumping:
-                frame = jump.getKeyFrame(player.stateTime);
-                break;
-        }
-
-        // draw the player, depending on the current velocity
-        // on the x-axis, draw the player facing either right
-        // or left
-        Batch batch = renderer.getBatch();
-        batch.begin();
-        if (player.facesRight) {
-            batch.draw(frame, player.position.x, player.position.y, Player.WIDTH, Player.HEIGHT);
-        } else {
-            batch.draw(frame, player.position.x + Player.WIDTH, player.position.y, -Player.WIDTH, Player.HEIGHT);
-        }
-        batch.end();
-    }//player
-
-    private void renderDebug () {
+    private void renderDebug() {
         debugRenderer.setProjectionMatrix(camera.combined);
         debugRenderer.begin(ShapeRenderer.ShapeType.Line);
-
         debugRenderer.setColor(Color.RED);
         debugRenderer.rect(player.position.x, player.position.y, Player.WIDTH, Player.HEIGHT);
-
         debugRenderer.setColor(Color.YELLOW);
-        TiledMapTileLayer layer = (TiledMapTileLayer)map.getLayers().get("walls");
+        TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get("walls");
         for (int y = 0; y <= layer.getHeight(); y++) {
             for (int x = 0; x <= layer.getWidth(); x++) {
                 Cell cell = layer.getCell(x, y);
@@ -349,27 +165,16 @@ public class Main extends InputAdapter implements ApplicationListener {
         debugRenderer.end();
     }
 
-    private void restartGame() {
-        System.out.println("🔥 Player touched fire! Restarting...");
-        // Reset Player's position and velocity
-        player.position.set(20, 20);  // Adjust starting position
-        player.velocity.set(0, 0);
-        // If needed, reset other game elements
-    }//player
-
-
-
     @Override
-    public void dispose () {
+    public void dispose() {
         renderer.dispose();
         fire.dispose();
         map.dispose();
     }
 
     @Override
-    public void resume () {
+    public void resume() {
     }
-
 
     @Override
     public void resize(int width, int height) {
