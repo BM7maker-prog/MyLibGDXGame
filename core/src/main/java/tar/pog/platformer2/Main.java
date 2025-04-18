@@ -57,31 +57,33 @@ public class Main extends InputAdapter implements ApplicationListener {
     @Override
     public void create() {
         touchInputHandler = new TouchInputHandler();
-        // Load player frames, split them, and assign to animations
+        // Load player textures and create animations
         playerTexture = new Texture("player_run.png");
         playerTextureStand = new Texture("player_standing.png");
         TextureRegion[] regions_forStanding = TextureRegion.split(playerTextureStand, 16, 16)[0];
         TextureRegion[] regions = TextureRegion.split(playerTexture, 16, 16)[0];
-        stand = new Animation<TextureRegion>(0.15f, regions_forStanding[0], regions_forStanding[1], regions_forStanding[2], regions_forStanding[3]);
+        stand = new Animation<TextureRegion>(0.15f, regions_forStanding[0], regions_forStanding[1],
+            regions_forStanding[2], regions_forStanding[3]);
         jump = new Animation<TextureRegion>(0, regions[1]);
-        walk = new Animation<TextureRegion>(0.15f, regions[0], regions[1], regions[2], regions[3], regions[4], regions[5]);
+        walk = new Animation<TextureRegion>(0.15f, regions[0], regions[1], regions[2], regions[3],
+            regions[4], regions[5]);
         walk.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 
         // Set player dimensions
         Player.WIDTH = 1.5f * (1 / 16f * regions[0].getRegionWidth());
         Player.HEIGHT = 1.5f * (1 / 16f * regions[0].getRegionHeight());
 
-        // Load map and set renderer
+        // Load map
         map = new TmxMapLoader().load("level1.tmx");
         renderer = new OrthogonalTiledMapRenderer(map, 1 / 16f);
         tileManager = new TileManager(map);
 
-        // Create camera
+        // Set up camera
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 30, 20);
         camera.update();
 
-        // Create fire and coin objects
+        // Create game objects
         fire = new Fire(70, -27);
         fire1 = new Fire(80, -27);
         fire2 = new Fire(100, -27);
@@ -89,9 +91,9 @@ public class Main extends InputAdapter implements ApplicationListener {
         fire4 = new Fire(110, -27);
         coin = new Coin(187, -12);
 
-        // Create player with dependencies
+        // Initialize player with dependencies
         Fire[] fires = {fire, fire1, fire2, fire3, fire4};
-        player = new Player(touchInputHandler, tileManager, fires, coin, rectPool, tiles, stand, walk, jump);
+        player = new Player(touchInputHandler, tileManager, fires, coin, rectPool, tiles);
         player.position.set(20, 20);
 
         debugRenderer = new ShapeRenderer();
@@ -99,16 +101,14 @@ public class Main extends InputAdapter implements ApplicationListener {
 
     @Override
     public void render() {
-        // Clear the screen
         ScreenUtils.clear(0.5f, 0.7f, 1, 1);
 
-        // Get delta time
         float deltaTime = Gdx.graphics.getDeltaTime();
 
-        // Update player
+        // Update game objects
         player.update(deltaTime);
 
-        // Camera follows player (x-axis only)
+        // Update camera
         camera.position.x = player.position.x;
         camera.update();
 
@@ -116,16 +116,18 @@ public class Main extends InputAdapter implements ApplicationListener {
         renderer.setView(camera);
         renderer.render();
 
-        // Render game objects
+        // Render player
+        renderPlayer(deltaTime);
+
+        // Render other game objects
         Batch batch = renderer.getBatch();
-        batch.begin();
-        player.render(batch); // Call player's render method
         coin.updateCoin(deltaTime);
         fire.updateFire(deltaTime);
         fire1.updateFire(deltaTime);
         fire2.updateFire(deltaTime);
         fire3.updateFire(deltaTime);
         fire4.updateFire(deltaTime);
+        batch.begin();
         coin.renderCoin(batch);
         fire.renderFire(batch);
         fire1.renderFire(batch);
@@ -134,7 +136,7 @@ public class Main extends InputAdapter implements ApplicationListener {
         fire4.renderFire(batch);
         batch.end();
 
-        // Render UI (buttons)
+        // Render UI
         OrthographicCamera uiCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         uiCamera.setToOrtho(false);
         uiCamera.update();
@@ -146,11 +148,37 @@ public class Main extends InputAdapter implements ApplicationListener {
         if (debug) renderDebug();
     }
 
+    private void renderPlayer(float deltaTime) {
+        TextureRegion frame = null;
+        switch (player.state) {
+            case Standing:
+                frame = stand.getKeyFrame(player.stateTime);
+                break;
+            case Walking:
+                frame = walk.getKeyFrame(player.stateTime);
+                break;
+            case Jumping:
+                frame = jump.getKeyFrame(player.stateTime);
+                break;
+        }
+
+        Batch batch = renderer.getBatch();
+        batch.begin();
+        if (player.facesRight) {
+            batch.draw(frame, player.position.x, player.position.y, Player.WIDTH, Player.HEIGHT);
+        } else {
+            batch.draw(frame, player.position.x + Player.WIDTH, player.position.y, -Player.WIDTH, Player.HEIGHT);
+        }
+        batch.end();
+    }
+
     private void renderDebug() {
         debugRenderer.setProjectionMatrix(camera.combined);
         debugRenderer.begin(ShapeRenderer.ShapeType.Line);
+
         debugRenderer.setColor(Color.RED);
         debugRenderer.rect(player.position.x, player.position.y, Player.WIDTH, Player.HEIGHT);
+
         debugRenderer.setColor(Color.YELLOW);
         TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get("walls");
         for (int y = 0; y <= layer.getHeight(); y++) {
@@ -170,6 +198,9 @@ public class Main extends InputAdapter implements ApplicationListener {
         renderer.dispose();
         fire.dispose();
         map.dispose();
+        playerTexture.dispose();
+        playerTextureStand.dispose();
+        debugRenderer.dispose();
     }
 
     @Override
