@@ -8,6 +8,7 @@ import com.badlogic.gdx.utils.Pool;
 import tar.pog.platformer2.Helpers.TileManager;
 import tar.pog.platformer2.Helpers.TouchInputHandler;
 import tar.pog.platformer2.Obstacles.Fire;
+import tar.pog.platformer2.Obstacles.Slime;
 import tar.pog.platformer2.Rewards.Coin;
 
 public class Player {
@@ -34,17 +35,30 @@ public class Player {
     private final TileManager tileManager;
     private final Fire[] fires;
     private final Coin coin;
+    private Slime[] slimes; // Nullable slimes array
     private final Pool<Rectangle> rectPool;
     private final Array<Rectangle> tiles;
 
+    // Original constructor (no slimes)
     public Player(TouchInputHandler touchInputHandler, TileManager tileManager, Fire[] fires, Coin coin,
                   Pool<Rectangle> rectPool, Array<Rectangle> tiles) {
+        this(touchInputHandler, tileManager, fires, coin, null, rectPool, tiles);
+    }
+
+    // Constructor with slimes
+    public Player(TouchInputHandler touchInputHandler, TileManager tileManager, Fire[] fires, Coin coin,
+                  Slime[] slimes, Pool<Rectangle> rectPool, Array<Rectangle> tiles) {
         this.touchInputHandler = touchInputHandler;
         this.tileManager = tileManager;
         this.fires = fires;
         this.coin = coin;
+        this.slimes = slimes; // May be null
         this.rectPool = rectPool;
         this.tiles = tiles;
+    }
+
+    public void updateSlimes(Slime[] newSlimes) {
+        this.slimes = newSlimes;
     }
 
     public void update(float deltaTime) {
@@ -92,49 +106,53 @@ public class Player {
         int startX, startY, endX, endY;
 
         // Horizontal collisions
-        if (velocity.x > 0) {
-            startX = endX = (int)(position.x + WIDTH + velocity.x);
-        } else {
-            startX = endX = (int)(position.x + velocity.x);
-        }
-        startY = (int)(position.y);
-        endY = (int)(position.y + HEIGHT);
-        tileManager.getTiles(startX, startY, endX, endY, tiles);
-        playerRect.x += velocity.x;
-
-        for (Rectangle tile : tiles) {
-            if (playerRect.overlaps(tile)) {
-                velocity.x = 0;
-                break;
+        if (tileManager != null) {
+            if (velocity.x > 0) {
+                startX = endX = (int)(position.x + WIDTH + velocity.x);
+            } else {
+                startX = endX = (int)(position.x + velocity.x);
             }
-        }
-        playerRect.x = position.x;
+            startY = (int)(position.y);
+            endY = (int)(position.y + HEIGHT);
+            tileManager.getTiles(startX, startY, endX, endY, tiles);
+            playerRect.x += velocity.x;
 
-        // Vertical collisions
-        if (velocity.y > 0) {
-            startY = endY = (int)(position.y + HEIGHT + velocity.y);
-        } else {
-            startY = endY = (int)(position.y + velocity.y);
-        }
-        startX = (int)(position.x);
-        endX = (int)(position.x + WIDTH);
-        tileManager.getTiles(startX, startY, endX, endY, tiles);
-        playerRect.y += velocity.y;
-
-        for (Rectangle tile : tiles) {
-            if (playerRect.overlaps(tile)) {
-                if (velocity.y > 0) {
-                    position.y = tile.y - HEIGHT;
-                } else {
-                    position.y = tile.y + tile.height;
-                    grounded = true;
+            for (Rectangle tile : tiles) {
+                if (playerRect.overlaps(tile)) {
+                    velocity.x = 0;
+                    break;
                 }
-                velocity.y = 0;
-                break;
             }
+            playerRect.x = position.x;
+
+            // Vertical collisions
+            if (velocity.y > 0) {
+                startY = endY = (int)(position.y + HEIGHT + velocity.y);
+            } else {
+                startY = endY = (int)(position.y + velocity.y);
+            }
+            startX = (int)(position.x);
+            endX = (int)(position.x + WIDTH);
+            tileManager.getTiles(startX, startY, endX, endY, tiles);
+            playerRect.y += velocity.y;
+
+            for (Rectangle tile : tiles) {
+                if (playerRect.overlaps(tile)) {
+                    if (velocity.y > 0) {
+                        position.y = tile.y - HEIGHT;
+                    } else {
+                        position.y = tile.y + tile.height;
+                        grounded = true;
+                    }
+                    velocity.y = 0;
+                    break;
+                }
+            }
+        } else {
+            System.err.println("Warning: tileManager is null, skipping collision detection");
         }
 
-        // Check collisions with fires and coin
+        // Check collisions with fires, coin, and slimes
         for (Fire fire : fires) {
             if (playerRect.overlaps(fire.getBoundingBox())) {
                 restart();
@@ -142,6 +160,14 @@ public class Player {
         }
         if (playerRect.overlaps(coin.getBoundingBox())) {
             restart();
+        }
+        // Only check slimes if the array is not null
+        if (slimes != null) {
+            for (Slime slime : slimes) {
+                if (playerRect.overlaps(slime.getBoundingBox())) {
+                    restart();
+                }
+            }
         }
 
         rectPool.free(playerRect);
@@ -160,7 +186,7 @@ public class Player {
     }
 
     public void restart() {
-        System.out.println("🔥 Player touched fire, coin, or fell! Restarting...");
+        System.out.println("🔥 Player touched fire, coin, slime, or fell! Restarting...");
         position.set(20, 20);
         velocity.set(0, 0);
         state = State.Standing;
