@@ -3,6 +3,7 @@ package tar.pog.platformer2;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -112,6 +113,9 @@ public class Main extends InputAdapter implements ApplicationListener {
         player.position.set(20, 20);
 
         debugRenderer = new ShapeRenderer();
+
+        // Set input processor to handle key presses
+        Gdx.input.setInputProcessor(this);
     }
 
     @Override
@@ -196,6 +200,27 @@ public class Main extends InputAdapter implements ApplicationListener {
         }
 
         debugRenderer.end();
+    }
+
+    private void resetGame() {
+        // Reset player position
+        player.position.set(20, 20);
+        // Reset slimes
+        slimeManager.reset();
+        // Reset camera to follow player
+        camera.position.x = player.position.x;
+        camera.update();
+        // Add other reset logic as needed (e.g., coin, fires, etc.)
+    }
+
+    @Override
+    public boolean keyDown(int keycode) {
+        // Trigger game reset on 'R' key press
+        if (keycode == Keys.R) {
+            resetGame();
+            return true;
+        }
+        return false;
     }
 
     @Override

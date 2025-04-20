@@ -14,21 +14,39 @@ public class Slime {
     private final Rectangle boundingBox;
     public static final float WIDTH = 1.2f; // Slime width in game units (16 pixels)
     public static final float HEIGHT = 1.7f; // Slime height in game units (24 pixels)
-    private static final float SPEED = -6.0f; // Slime moves left at constant speed
+    private static final float SPEED = 6.0f; // Absolute speed (positive)
     private final Animation<TextureRegion> animation; // Animation for rendering
     private float stateTime; // Animation time
+    private final float minX; // Left boundary of patrol area
+    private final float maxX; // Right boundary of patrol area
+    private boolean facingRight; // Tracks sprite facing direction
 
-    public Slime(float x, float y, Animation<TextureRegion> animation) {
+    public Slime(float x, float y, Animation<TextureRegion> animation, float minX, float maxX) {
         this.position = new Vector2(x, y);
-        this.velocity = new Vector2(SPEED, 0);
+        this.velocity = new Vector2(-SPEED, 0); // Start moving left
         this.boundingBox = new Rectangle(x, y, WIDTH, HEIGHT);
         this.animation = animation;
         this.stateTime = 0;
+        this.minX = minX;
+        this.maxX = maxX;
+        this.facingRight = false; // Start facing left (matches initial velocity)
     }
 
     public void update(float deltaTime) {
         // Update position based on velocity
         position.add(velocity.x * deltaTime, velocity.y * deltaTime);
+
+        // Check boundaries and reverse velocity if needed
+        if (position.x <= minX) {
+            position.x = minX; // Clamp to minX
+            velocity.x = SPEED; // Move right
+            facingRight = true; // Face right
+        } else if (position.x + WIDTH >= maxX) {
+            position.x = maxX - WIDTH; // Clamp to maxX
+            velocity.x = -SPEED; // Move left
+            facingRight = false; // Face left
+        }
+
         // Update bounding box position
         boundingBox.setPosition(position.x, position.y);
         // Update animation time
@@ -52,18 +70,27 @@ public class Slime {
         return animation.getKeyFrame(stateTime, true); // Loop animation
     }
 
+    public boolean isFacingRight() {
+        return facingRight;
+    }
+
     public static class SlimeManager {
         private final Array<Slime> slimes;
-        private float slimeSpawnTimer;
-        private static final float SLIME_SPAWN_INTERVAL = 2.0f; // Spawn every 2 seconds
         private final Animation<TextureRegion> slimeAnimation;
         private TextureRegion fallbackTexture; // Placeholder for missing texture
         private final float mapWidth;
         private Texture slimeTexture; // Texture for slime animation
+        // Define patrol zones as {minX, maxX} pairs
+        private final float[][] patrolZones = {
+            {10, 20}, // Zone 1: x=10 to x=20
+            {30, 40}, // Zone 2: x=30 to x=40
+            {50, 60}  // Zone 3: x=50 to x=60
+        };
+        // Set to true if slime_walk.png faces left by default, false if it faces right
+        private static final boolean SPRITE_FACES_LEFT = true;
 
         public SlimeManager(float mapWidth) {
             this.slimes = new Array<>();
-            this.slimeSpawnTimer = 0;
             this.mapWidth = mapWidth;
 
             // Load slime animation
@@ -101,6 +128,24 @@ public class Slime {
             if (slimeAnimation == null) {
                 System.err.println("SlimeManager: No valid slime animation, using red 16x24 fallback texture");
             }
+
+            // Spawn initial slimes
+            reset();
+        }
+
+        public void reset() {
+            // Clear existing slimes
+            slimes.clear();
+
+            // Spawn one slime per patrol zone
+            for (float[] zone : patrolZones) {
+                float minX = zone[0];
+                float maxX = zone[1];
+                float x = maxX - WIDTH; // Start at right edge of zone
+                float y = 2.0f; // Fixed height, adjust as needed
+                Slime slime = new Slime(x, y, slimeAnimation != null ? slimeAnimation : new Animation<TextureRegion>(0.1f, fallbackTexture), minX, maxX);
+                slimes.add(slime);
+            }
         }
 
         public void update(float deltaTime, float cameraLeftEdge) {
@@ -109,7 +154,8 @@ public class Slime {
                 slime.update(deltaTime);
             }
 
-            // Remove off-screen slimes
+            // Optionally remove off-screen slimes (disabled to prevent disappearance)
+            /*
             Array<Slime> slimesToRemove = new Array<>();
             for (Slime slime : slimes) {
                 if (slime.isOffScreen(cameraLeftEdge)) {
@@ -117,31 +163,24 @@ public class Slime {
                 }
             }
             slimes.removeAll(slimesToRemove, true);
-
-            // Spawn new slimes
-            slimeSpawnTimer += deltaTime;
-            if (slimeSpawnTimer >= SLIME_SPAWN_INTERVAL) {
-                spawnSlime();
-                slimeSpawnTimer = 0;
-            }
-        }
-
-        private void spawnSlime() {
-            // Spawn slime from right side of the map at a fixed y-position
-            float x = mapWidth - 1; // Right edge of map
-            float y = 2.0f; // Fixed height, adjust as needed
-            Slime slime = new Slime(x, y, slimeAnimation != null ? slimeAnimation : new Animation<TextureRegion>(0.1f, fallbackTexture));
-            slimes.add(slime);
-        }
-
-        public Slime[] getSlimes() {
-            return slimes.toArray(Slime.class);
+            */
         }
 
         public void render(com.badlogic.gdx.graphics.g2d.Batch batch) {
             for (Slime slime : slimes) {
                 TextureRegion frame = slime.getCurrentFrame() != null ? slime.getCurrentFrame() : fallbackTexture;
-                batch.draw(frame, slime.getPosition().x, slime.getPosition().y, Slime.WIDTH, Slime.HEIGHT);
+                boolean shouldFaceRight = slime.isFacingRight();
+                if (SPRITE_FACES_LEFT) {
+                    // If sprite faces left by default, flip logic
+                    shouldFaceRight = !shouldFaceRight;
+                }
+                if (shouldFaceRight) {
+                    // Draw facing right
+                    batch.draw(frame, slime.getPosition().x, slime.getPosition().y, Slime.WIDTH, Slime.HEIGHT);
+                } else {
+                    // Draw facing left (flip horizontally)
+                    batch.draw(frame, slime.getPosition().x + Slime.WIDTH, slime.getPosition().y, -Slime.WIDTH, Slime.HEIGHT);
+                }
             }
         }
 
@@ -150,6 +189,10 @@ public class Slime {
             for (Slime slime : slimes) {
                 debugRenderer.rect(slime.getPosition().x, slime.getPosition().y, Slime.WIDTH, Slime.HEIGHT);
             }
+        }
+
+        public Slime[] getSlimes() {
+            return slimes.toArray(Slime.class);
         }
 
         public void dispose() {
