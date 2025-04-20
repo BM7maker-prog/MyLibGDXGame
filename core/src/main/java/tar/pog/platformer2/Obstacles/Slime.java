@@ -14,7 +14,7 @@ public class Slime {
     private final Rectangle boundingBox;
     public static final float WIDTH = 1.0f; // Slime width in game units (16 pixels)
     public static final float HEIGHT = 1.5f; // Slime height in game units (24 pixels)
-    private static final float SPEED = -10.0f; // Slime moves left at constant speed
+    private static final float SPEED = -6.0f; // Slime moves left at constant speed
     private final Animation<TextureRegion> animation; // Animation for rendering
     private float stateTime; // Animation time
 
