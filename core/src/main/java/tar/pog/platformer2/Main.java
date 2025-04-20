@@ -50,7 +50,6 @@ public class Main extends InputAdapter implements ApplicationListener {
     private boolean debug = false;
     private ShapeRenderer debugRenderer;
     private TileManager tileManager;
-    private Texture slimeTexture;
     private Slime.SlimeManager slimeManager;
 
     @Override
@@ -94,27 +93,6 @@ public class Main extends InputAdapter implements ApplicationListener {
         uiCamera.setToOrtho(false);
         uiCamera.update();
 
-        // Load slime animation from full sheet
-        Animation<TextureRegion> slimeAnimation = null;
-        try {
-            slimeTexture = new Texture("slime_walk.png");
-            TextureRegion[][] splitFrames = TextureRegion.split(slimeTexture, 16, 24);
-            Array<TextureRegion> allFrames = new Array<>();
-            for (TextureRegion[] row : splitFrames) {
-                for (TextureRegion frame : row) {
-                    allFrames.add(frame);
-                }
-            }
-            if (allFrames.size >= 15) {
-                slimeAnimation = new Animation<>(0.1f, allFrames, Animation.PlayMode.LOOP);
-            } else {
-                System.err.println("slime.png does not contain 15 frames, using fallback");
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to load slime.png: " + e.getMessage());
-            slimeTexture = null;
-        }
-
         float mapWidth;
         try {
             mapWidth = ((TiledMapTileLayer) map.getLayers().get("walls")).getWidth();
@@ -123,7 +101,7 @@ public class Main extends InputAdapter implements ApplicationListener {
             mapWidth = 100f;
         }
 
-        slimeManager = new Slime.SlimeManager(slimeAnimation, mapWidth);
+        slimeManager = new Slime.SlimeManager(mapWidth);
 
         fire = new Fire(70, -27); fire1 = new Fire(80, -27); fire2 = new Fire(100, -27);
         fire3 = new Fire(85, -27); fire4 = new Fire(110, -27);
@@ -226,7 +204,6 @@ public class Main extends InputAdapter implements ApplicationListener {
         if (map != null) map.dispose();
         if (playerTexture != null) playerTexture.dispose();
         if (playerTextureStand != null) playerTextureStand.dispose();
-        if (slimeTexture != null) slimeTexture.dispose();
         if (slimeManager != null) slimeManager.dispose();
         if (fire != null) fire.dispose();
         if (debugRenderer != null) debugRenderer.dispose();

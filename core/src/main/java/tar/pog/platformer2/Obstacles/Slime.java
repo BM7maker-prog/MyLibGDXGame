@@ -12,8 +12,8 @@ public class Slime {
     private final Vector2 position;
     private final Vector2 velocity;
     private final Rectangle boundingBox;
-    public static final float WIDTH = 1.0f; // Slime width in game units (16 pixels)
-    public static final float HEIGHT = 1.5f; // Slime height in game units (24 pixels)
+    public static final float WIDTH = 1.2f; // Slime width in game units (16 pixels)
+    public static final float HEIGHT = 1.7f; // Slime height in game units (24 pixels)
     private static final float SPEED = -6.0f; // Slime moves left at constant speed
     private final Animation<TextureRegion> animation; // Animation for rendering
     private float stateTime; // Animation time
@@ -57,24 +57,49 @@ public class Slime {
         private float slimeSpawnTimer;
         private static final float SLIME_SPAWN_INTERVAL = 2.0f; // Spawn every 2 seconds
         private final Animation<TextureRegion> slimeAnimation;
-        private final float mapWidth;
         private TextureRegion fallbackTexture; // Placeholder for missing texture
+        private final float mapWidth;
+        private Texture slimeTexture; // Texture for slime animation
 
-        public SlimeManager(Animation<TextureRegion> slimeAnimation, float mapWidth) {
+        public SlimeManager(float mapWidth) {
             this.slimes = new Array<>();
             this.slimeSpawnTimer = 0;
-            this.slimeAnimation = slimeAnimation;
             this.mapWidth = mapWidth;
+
+            // Load slime animation
+            Animation<TextureRegion> tempAnimation = null;
+            try {
+                slimeTexture = new Texture("slime_walk.png");
+                TextureRegion[][] splitFrames = TextureRegion.split(slimeTexture, 16, 24);
+                Array<TextureRegion> allFrames = new Array<>();
+                for (TextureRegion[] row : splitFrames) {
+                    for (TextureRegion frame : row) {
+                        allFrames.add(frame);
+                    }
+                }
+                if (allFrames.size >= 15) {
+                    tempAnimation = new Animation<>(0.1f, allFrames, Animation.PlayMode.LOOP);
+                    System.out.println("SlimeManager: Initialized with animation");
+                } else {
+                    System.err.println("slime_walk.png does not contain 15 frames, using fallback");
+                }
+            } catch (Exception e) {
+                slimeTexture = null;
+                System.err.println("Failed to load slime_walk.png: " + e.getMessage());
+            }
+
+            // Assign final animation
+            slimeAnimation = tempAnimation;
+
             // Create fallback texture (red rectangle) for missing slime.png
             Pixmap pixmap = new Pixmap(16, 24, Pixmap.Format.RGBA8888);
             pixmap.setColor(1, 0, 0, 1); // Red
             pixmap.fillRectangle(0, 0, 16, 24);
             fallbackTexture = new TextureRegion(new Texture(pixmap));
             pixmap.dispose();
+
             if (slimeAnimation == null) {
                 System.err.println("SlimeManager: No valid slime animation, using red 16x24 fallback texture");
-            } else {
-                System.out.println("SlimeManager: Initialized with animation");
             }
         }
 
@@ -128,6 +153,9 @@ public class Slime {
         }
 
         public void dispose() {
+            if (slimeTexture != null) {
+                slimeTexture.dispose();
+            }
             if (fallbackTexture != null && fallbackTexture.getTexture() != null) {
                 fallbackTexture.getTexture().dispose();
             }
