@@ -82,9 +82,9 @@ public class Slime {
         private Texture slimeTexture; // Texture for slime animation
         // Define patrol zones as {minX, maxX} pairs
         private final float[][] patrolZones = {
-            {10, 20}, // Zone 1: x=10 to x=20
-            {30, 40}, // Zone 2: x=30 to x=40
-            {50, 60}  // Zone 3: x=50 to x=60
+            {30, 46}, // Zone 2: x=30 to x=40
+            {50, 69},  // Zone 3: x=50 to x=60
+            {109,122}
         };
         // Set to true if slime_walk.png faces left by default, false if it faces right
         private static final boolean SPRITE_FACES_LEFT = true;
