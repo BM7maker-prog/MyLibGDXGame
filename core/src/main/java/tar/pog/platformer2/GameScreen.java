@@ -64,8 +64,8 @@ public class GameScreen extends InputAdapter implements Screen {
         tileManager = new TileManager(map);
 
         try {
-            playerTexture = new Texture("player_run.png");
-            playerTextureStand = new Texture("player_standing.png");
+            playerTexture = new Texture("img/player/player_run.png");
+            playerTextureStand = new Texture("img/player/player_standing.png");
         } catch (Exception e) {
             System.err.println("Failed to load player textures: " + e.getMessage());
             Gdx.app.exit(); return;

@@ -27,13 +27,13 @@ public class MainMenuScreen implements Screen {
     public void render(float delta) {
         System.out.println("MainMenuScreen rendering..."); // Debug log
 
-        Gdx.gl.glClearColor(0, 0.3f, 0.5f, 1);
+        Gdx.gl.glClearColor(0, 0.3f, 0.4f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         camera.update();
         batch.setProjectionMatrix(camera.combined);
 
         batch.begin();
-        layout.setText(font, "My Platformer Game");
+        layout.setText(font, "BraveHeart's Trail");
         font.draw(batch, layout, (800 - layout.width) / 2, 350);
 
         layout.setText(font, "Press ENTER or Tap to Start");

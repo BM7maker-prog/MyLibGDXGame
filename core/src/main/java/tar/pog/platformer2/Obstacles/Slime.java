@@ -96,7 +96,7 @@ public class Slime {
             // Load slime animation
             Animation<TextureRegion> tempAnimation = null;
             try {
-                slimeTexture = new Texture("slime_walk.png");
+                slimeTexture = new Texture("img/NPCs/slime/slime_walk.png");
                 TextureRegion[][] splitFrames = TextureRegion.split(slimeTexture, 16, 24);
                 Array<TextureRegion> allFrames = new Array<>();
                 for (TextureRegion[] row : splitFrames) {

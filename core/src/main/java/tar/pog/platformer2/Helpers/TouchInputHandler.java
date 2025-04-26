@@ -15,9 +15,9 @@ public class TouchInputHandler {
 
     public TouchInputHandler() {
         // Load textures with error handling
-        buttonRight = new Sprite(new Texture("right.png"));
-        buttonLeft = new Sprite(new Texture("left.png"));
-        buttonUpward = new Sprite(new Texture("up.png"));
+        buttonRight = new Sprite(new Texture("img/buttons/right.png"));
+        buttonLeft = new Sprite(new Texture("img/buttons/left.png"));
+        buttonUpward = new Sprite(new Texture("img/buttons/up.png"));
 
         // Set button sizes
         buttonRight.setSize(buttonSize, buttonSize);

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="212" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="1">
  <tileset firstgid="1" name="tileSet-hd" tilewidth="16" tileheight="16" tilecount="256" columns="16">
-  <image source="tileSet.png" trans="fe80fe" width="256" height="256"/>
+  <image source="img/TileSet/tileSet.png" trans="fe80fe" width="256" height="256"/>
  </tileset>
  <tileset firstgid="257" name="tilSet2" tilewidth="16" tileheight="16" tilecount="72" columns="12">
-  <image source="tileSet2.png" width="192" height="96"/>
+  <image source="img/TileSet/tileSet2.png" width="192" height="96"/>
  </tileset>
  <tileset firstgid="329" name="walls-stone" tilewidth="16" tileheight="16" tilecount="1" columns="1">
   <image source="img/walls/stone.png" width="16" height="16"/>
