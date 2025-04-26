@@ -1,4 +1,4 @@
-package tar.pog.platformer2.Obstacles;
+package tar.pog.platformer2.NPC;
 
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;

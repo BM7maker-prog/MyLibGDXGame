@@ -19,7 +19,7 @@ public class Fire implements Disposable {
         this.y = y;
 
         // Load fire sprite sheet
-        fireTexture = new Texture("burning_loop_1.png");
+        fireTexture = new Texture("img/Obstacles/burning_loop_1.png");
 
         // Ensure the texture is correctly divided
         int frameCols = 8; // Number of columns in sprite sheet

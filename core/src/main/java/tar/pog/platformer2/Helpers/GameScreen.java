@@ -1,4 +1,4 @@
-package tar.pog.platformer2;
+package tar.pog.platformer2.Helpers;
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.*;
@@ -13,10 +13,10 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
 import com.badlogic.gdx.utils.ScreenUtils;
 
-import tar.pog.platformer2.Helpers.TileManager;
-import tar.pog.platformer2.Helpers.TouchInputHandler;
+import tar.pog.platformer2.Main.Main;
 import tar.pog.platformer2.Obstacles.Fire;
-import tar.pog.platformer2.Obstacles.Slime;
+import tar.pog.platformer2.NPC.Slime;
+import tar.pog.platformer2.Player.Player;
 import tar.pog.platformer2.Rewards.Coin;
 
 public class GameScreen extends InputAdapter implements Screen {

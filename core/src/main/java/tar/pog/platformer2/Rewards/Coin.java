@@ -20,7 +20,7 @@ public class Coin implements Disposable {
         this.y = y;
 
         // Load fire sprite sheet
-        coinTexture = new Texture("coin_sprite.png");
+        coinTexture = new Texture("img/Rewards/coin_sprite.png");
 
         // Ensure the texture is correctly divided
         int frameCols = 14; // Number of columns in sprite sheet

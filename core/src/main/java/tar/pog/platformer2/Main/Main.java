@@ -1,7 +1,9 @@
-package tar.pog.platformer2;
+package tar.pog.platformer2.Main;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+
+import tar.pog.platformer2.Menu.MainMenuScreen;
 
 public class Main extends Game {
     @Override

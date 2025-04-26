@@ -1,4 +1,4 @@
-package tar.pog.platformer2;
+package tar.pog.platformer2.Player;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
@@ -8,7 +8,7 @@ import com.badlogic.gdx.utils.Pool;
 import tar.pog.platformer2.Helpers.TileManager;
 import tar.pog.platformer2.Helpers.TouchInputHandler;
 import tar.pog.platformer2.Obstacles.Fire;
-import tar.pog.platformer2.Obstacles.Slime;
+import tar.pog.platformer2.NPC.Slime;
 import tar.pog.platformer2.Rewards.Coin;
 
 public class Player {

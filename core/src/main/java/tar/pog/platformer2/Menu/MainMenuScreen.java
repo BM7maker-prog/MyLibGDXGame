@@ -1,8 +1,11 @@
-package tar.pog.platformer2;
+package tar.pog.platformer2.Menu;
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.*;
+
+import tar.pog.platformer2.Helpers.GameScreen;
+import tar.pog.platformer2.Main.Main;
 
 public class MainMenuScreen implements Screen {
 
