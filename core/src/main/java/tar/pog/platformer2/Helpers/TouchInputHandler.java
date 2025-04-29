@@ -1,61 +1,61 @@
 package tar.pog.platformer2.Helpers;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector3;
 
 public class TouchInputHandler {
     private Sprite buttonRight;
     private Sprite buttonLeft;
     private Sprite buttonUpward;
-    private float buttonSize = 220f; // Size in pixels
-    private float padding = 60f;
+    private float buttonSize; // Size in pixels
+    private float padding; // Padding in pixels
+    private float buttonSpacing; // Distance between buttons
+    private final Camera uiCamera;
 
-    public TouchInputHandler() {
-        // Load textures with error handling
+    public TouchInputHandler(Camera uiCamera) {
+        this.uiCamera = uiCamera;
+
+        // Calculate button size as a percentage of screen width (e.g., 15% of screen width)
+        buttonSize = Gdx.graphics.getWidth() * 0.10f; // 15% of the screen width for buttons
+        padding = Gdx.graphics.getWidth() * 0.01f; // 5% of screen width for padding
+
+        // Calculate spacing between buttons as a percentage of screen width (e.g., 5% of the screen width)
+        buttonSpacing = Gdx.graphics.getWidth() * 0.05f; // 5% of screen width for spacing
+
+        // Load button textures
         buttonRight = new Sprite(new Texture("img/buttons/right.png"));
         buttonLeft = new Sprite(new Texture("img/buttons/left.png"));
         buttonUpward = new Sprite(new Texture("img/buttons/up.png"));
 
-        // Set button sizes
+        // Scale the button images according to the buttonSize
         buttonRight.setSize(buttonSize, buttonSize);
         buttonLeft.setSize(buttonSize, buttonSize);
         buttonUpward.setSize(buttonSize, buttonSize);
 
-        // Position buttons (left, right at bottom, jump at top-right)
-        buttonLeft.setPosition(padding + 25f, padding);
-        buttonRight.setPosition(padding * 2 + buttonSize+25f, padding);
-        buttonUpward.setPosition(Gdx.graphics.getWidth() - buttonSize - padding -90f,
-            padding);
+        // Position buttons based on screen size and buttonSpacing
+        buttonLeft.setPosition(padding, padding);
+        buttonRight.setPosition(buttonLeft.getX() + buttonSize + buttonSpacing, padding); // Spacing between buttons
+        buttonUpward.setPosition(Gdx.graphics.getWidth() - buttonSize - padding, padding);
     }
 
     public void render(Batch batch) {
-        // Draw buttons with transparency when pressed
-        float alpha = 1f;
-        if (isLeftButtonTouched()) {
-            alpha = 0.7f;
-            buttonLeft.setAlpha(alpha);
-        } else {
-            buttonLeft.setAlpha(1f);
-        }
+        float alpha;
+
+        // Check if the buttons are touched and set their alpha accordingly
+        alpha = isLeftButtonTouched() ? 0.7f : 1f;
+        buttonLeft.setAlpha(alpha);
         buttonLeft.draw(batch);
 
-        if (isRightButtonTouched()) {
-            alpha = 0.7f;
-            buttonRight.setAlpha(alpha);
-        } else {
-            buttonRight.setAlpha(1f);
-        }
+        alpha = isRightButtonTouched() ? 0.7f : 1f;
+        buttonRight.setAlpha(alpha);
         buttonRight.draw(batch);
 
-        if (isUpwardButtonTouched()) {
-            alpha = 0.7f;
-            buttonUpward.setAlpha(alpha);
-        } else {
-            buttonUpward.setAlpha(1f);
-        }
+        alpha = isUpwardButtonTouched() ? 0.7f : 1f;
+        buttonUpward.setAlpha(alpha);
         buttonUpward.draw(batch);
     }
 
@@ -72,11 +72,12 @@ public class TouchInputHandler {
     }
 
     private boolean checkButtonTouch(Sprite button) {
-        for (int i = 0; i < 5; i++) { // Check up to 5 simultaneous touches
+        Vector3 touchPos = new Vector3();
+        for (int i = 0; i < 5; i++) {
             if (Gdx.input.isTouched(i)) {
-                float x = Gdx.input.getX(i);
-                float y = Gdx.graphics.getHeight() - Gdx.input.getY(i); // Convert to screen coordinates
-                if (button.getBoundingRectangle().contains(x, y)) {
+                touchPos.set(Gdx.input.getX(i), Gdx.input.getY(i), 0);
+                uiCamera.unproject(touchPos); // Convert touch coordinates to world coordinates
+                if (button.getBoundingRectangle().contains(touchPos.x, touchPos.y)) {
                     return true;
                 }
             }

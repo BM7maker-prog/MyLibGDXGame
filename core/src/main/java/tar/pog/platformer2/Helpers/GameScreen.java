@@ -51,7 +51,12 @@ public class GameScreen extends InputAdapter implements Screen {
     }
 
     private void create() {
-        touchInputHandler = new TouchInputHandler();
+        // Initialize uiCamera before touchInputHandler
+        uiCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        uiCamera.setToOrtho(false);
+        uiCamera.update();
+
+        touchInputHandler = new TouchInputHandler(uiCamera);
 
         try {
             map = new TmxMapLoader().load("level1.tmx");
@@ -61,7 +66,7 @@ public class GameScreen extends InputAdapter implements Screen {
         }
 
         renderer = new OrthogonalTiledMapRenderer(map, 1 / 16f);
-        tileManager = new TileManager(map);
+        tileManager = new TileManager(map, 16f, 1 / 16f);
 
         try {
             playerTexture = new Texture("img/player/player_run.png");
@@ -84,10 +89,6 @@ public class GameScreen extends InputAdapter implements Screen {
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 30, 20);
         camera.update();
-
-        uiCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        uiCamera.setToOrtho(false);
-        uiCamera.update();
 
         float mapWidth;
         try {
@@ -164,7 +165,6 @@ public class GameScreen extends InputAdapter implements Screen {
                 break;
         }
 
-
         if (frame != null) {
             Batch batch = renderer.getBatch();
             batch.begin();
@@ -212,7 +212,8 @@ public class GameScreen extends InputAdapter implements Screen {
         return false;
     }
 
-    @Override public void dispose() {
+    @Override
+    public void dispose() {
         if (renderer != null) renderer.dispose();
         if (map != null) map.dispose();
         if (playerTexture != null) playerTexture.dispose();
