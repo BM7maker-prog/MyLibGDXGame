@@ -4,77 +4,58 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Rectangle; // ✅ Import Rectangle for hitbox
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Disposable;
 
 public class Coin implements Disposable {
     private Texture coinTexture;
     private Animation<TextureRegion> coinAnimation;
     private float stateTime;
-    private float x, y; // Fire position
-    private float width, height; // Fire dimensions
+    private float x, y;
+    private float width, height;
     public int coinCount = 0;
 
     public Coin(float x, float y) {
         this.x = x;
         this.y = y;
 
-        // Load fire sprite sheet
         coinTexture = new Texture("img/Rewards/coin_sprite.png");
-
-        // Ensure the texture is correctly divided
-        int frameCols = 14; // Number of columns in sprite sheet
-        int frameRows = 1; // Assuming only 1 row for simplicity
+        int frameCols = 14;
+        int frameRows = 1;
         int frameWidth = coinTexture.getWidth() / frameCols;
-        int frameHeight = coinTexture.getHeight() / frameRows; // Adjusted to handle rows
+        int frameHeight = coinTexture.getHeight() / frameRows;
 
-        // Set width & height (🔥 Fix: Updated to match actual frame dimensions)
-        this.width = frameWidth;
-        this.height = frameHeight;
+        this.width = frameWidth / 16f; // Convert to world units (1 unit = 16 pixels)
+        this.height = frameHeight / 16f;
 
-        // Split sprite sheet into frames
         TextureRegion[][] tmp = TextureRegion.split(coinTexture, frameWidth, frameHeight);
-        TextureRegion[] fireFrames = new TextureRegion[frameCols]; // Only using the first row, so frameCols is sufficient
-
+        TextureRegion[] frames = new TextureRegion[frameCols];
         for (int i = 0; i < frameCols; i++) {
-            fireFrames[i] = tmp[0][i]; // Assuming 1 row, 8 columns
+            frames[i] = tmp[0][i];
         }
 
-        // Create animation
-        coinAnimation = new Animation<>(0.1f, fireFrames);
+        coinAnimation = new Animation<>(0.1f, frames);
         coinAnimation.setPlayMode(Animation.PlayMode.LOOP);
         stateTime = 0f;
-
-
     }
 
-    // Update fire animation
     public void updateCoin(float deltaTime) {
         stateTime += deltaTime;
     }
 
-    // Render the fire animation
     public void renderCoin(Batch batch) {
-        // Add scaling factor (e.g., scale by 0.5 to make it smaller)
-        float scaleX = 0.1f; // Scale factor for width
-        float scaleY = 0.1f; // Scale factor for height
-
-        batch.draw(coinAnimation.getKeyFrame(stateTime, true), x, y, width, height, width, height, scaleX, scaleY, 0f);
+        float scale = 0.1f; // Scale factor
+        batch.draw(coinAnimation.getKeyFrame(stateTime, true), x, y, width * scale, height * scale);
     }
 
-
-    // Get Fire's hitbox for collision detection
-// Get Fire's hitbox for collision detection
     public Rectangle getBoundingBox() {
-
-        return new Rectangle(x + 15, y , width , height);
+        float scale = 0.1f; // Match render scale
+        return new Rectangle(x, y, width * scale, height * scale);
     }
-
 
     public float getHeight() { return height; }
     public float getWidth() { return width; }
 
-    // Dispose resources
     @Override
     public void dispose() {
         if (coinTexture != null) {

@@ -30,6 +30,8 @@ public class Player {
     public boolean facesRight = true;
     public float stateTime = 0;
 
+    private boolean dead = false; // Tracks whether the player is dead
+
     // Dependencies
     private final TouchInputHandler touchInputHandler;
     private final TileManager tileManager;
@@ -64,6 +66,8 @@ public class Player {
     public void update(float deltaTime) {
         if (deltaTime == 0) return;
         if (deltaTime > 0.1f) deltaTime = 0.1f;
+
+        if (dead) return; // Skip update if the player is dead
 
         stateTime += deltaTime;
 
@@ -155,17 +159,17 @@ public class Player {
         // Check collisions with fires, coin, and slimes
         for (Fire fire : fires) {
             if (playerRect.overlaps(fire.getBoundingBox())) {
-                restart();
+                markAsDead();
             }
         }
         if (playerRect.overlaps(coin.getBoundingBox())) {
-            restart();
+            markAsDead();
         }
         // Only check slimes if the array is not null
         if (slimes != null) {
             for (Slime slime : slimes) {
                 if (playerRect.overlaps(slime.getBoundingBox())) {
-                    restart();
+                    markAsDead();
                 }
             }
         }
@@ -174,7 +178,7 @@ public class Player {
 
         // Check if player falls off map
         if (position.y < 0) {
-            restart();
+            markAsDead();
         }
 
         // Update position and unscale velocity
@@ -185,6 +189,15 @@ public class Player {
         velocity.x *= DAMPING;
     }
 
+    public void markAsDead() {
+        dead = true;
+        System.out.println("🔥 Player is dead!");
+    }
+
+    public boolean isDead() {
+        return dead;
+    }
+
     public void restart() {
         System.out.println("🔥 Player touched fire, coin, slime, or fell! Restarting...");
         position.set(20, 20);
@@ -193,5 +206,6 @@ public class Player {
         grounded = false;
         facesRight = true;
         stateTime = 0;
+        dead = false; // Reset death state
     }
 }

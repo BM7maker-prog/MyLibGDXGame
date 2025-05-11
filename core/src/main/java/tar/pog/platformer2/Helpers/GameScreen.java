@@ -14,6 +14,7 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 import tar.pog.platformer2.Main.Main;
+import tar.pog.platformer2.Menu.GameOverScreen;
 import tar.pog.platformer2.Obstacles.Fire;
 import tar.pog.platformer2.NPC.Slime;
 import tar.pog.platformer2.Player.Player;
@@ -117,6 +118,14 @@ public class GameScreen extends InputAdapter implements Screen {
         if (map == null || tileManager == null || player == null) return;
 
         update(deltaTime);
+
+        // Transition to GameOverScreen if the player dies
+        if (player.isDead()) {
+            System.out.println("Player is dead - switching to GameOverScreen");
+            game.setScreen(new GameOverScreen(game));
+            dispose();
+            return;
+        }
 
         camera.position.x = player.position.x;
         camera.update();
