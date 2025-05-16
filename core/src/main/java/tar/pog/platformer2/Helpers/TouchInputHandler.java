@@ -8,54 +8,84 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector3;
 
 public class TouchInputHandler {
-    private Sprite buttonRight;
-    private Sprite buttonLeft;
-    private Sprite buttonUpward;
-    private float buttonSize; // Size in pixels
-    private float padding; // Padding in pixels
-    private float buttonSpacing; // Distance between buttons
+    private final Sprite buttonRight;
+    private final Sprite buttonLeft;
+    private final Sprite buttonUpward;
+
+    private float buttonSize; // Size in virtual units
+    private float padding; // Padding in virtual units
+    private float buttonSpacing; // Distance between buttons in virtual units
     private final Camera uiCamera;
+    private final float touchedAlpha; // Alpha when button is touched
+    private final float untouchedAlpha; // Alpha when button is not touched
+
+    // Virtual viewport dimensions
+    private static final float VIRTUAL_WIDTH = 1050f;
+    private static final float VIRTUAL_HEIGHT = 480f;
+    private static final int MAX_TOUCH_POINTS = 10; // Maximum touch points to check
 
     public TouchInputHandler(Camera uiCamera) {
+        if (uiCamera == null) {
+            throw new IllegalArgumentException("UI Camera cannot be null");
+        }
         this.uiCamera = uiCamera;
+        this.touchedAlpha = 0.7f;
+        this.untouchedAlpha = 1.0f;
 
-        // Calculate button size as a percentage of screen width (e.g., 15% of screen width)
-        buttonSize = Gdx.graphics.getWidth() * 0.10f; // 15% of the screen width for buttons
-        padding = Gdx.graphics.getWidth() * 0.01f; // 5% of screen width for padding
+        // Initialize button textures with linear filtering
+        try {
+            Texture rightTexture = new Texture("img/buttons/right.png");
+            rightTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            buttonRight = new Sprite(rightTexture);
 
-        // Calculate spacing between buttons as a percentage of screen width (e.g., 5% of the screen width)
-        buttonSpacing = Gdx.graphics.getWidth() * 0.05f; // 5% of screen width for spacing
+            Texture leftTexture = new Texture("img/buttons/left.png");
+            leftTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            buttonLeft = new Sprite(leftTexture);
 
-        // Load button textures
-        buttonRight = new Sprite(new Texture("img/buttons/right.png"));
-        buttonLeft = new Sprite(new Texture("img/buttons/left.png"));
-        buttonUpward = new Sprite(new Texture("img/buttons/up.png"));
+            Texture upTexture = new Texture("img/buttons/up.png");
+            upTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+            buttonUpward = new Sprite(upTexture);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load button textures: " + e.getMessage(), e);
+        }
 
-        // Scale the button images according to the buttonSize
+        // Calculate button layout
+        recalculateButtonLayout();
+    }
+
+    private void recalculateButtonLayout() {
+        // Calculate button size and spacing based on virtual height
+        buttonSize = VIRTUAL_HEIGHT * 0.20f; // 20% of virtual height (96 units)
+        padding = VIRTUAL_HEIGHT * 0.04f; // 4% of virtual height (19.2 units)
+        buttonSpacing = VIRTUAL_HEIGHT * 0.02f; // 2% of virtual height (9.6 units)
+
+        // Scale buttons to the calculated size
         buttonRight.setSize(buttonSize, buttonSize);
         buttonLeft.setSize(buttonSize, buttonSize);
         buttonUpward.setSize(buttonSize, buttonSize);
 
-        // Position buttons based on screen size and buttonSpacing
-        buttonLeft.setPosition(padding, padding);
-        buttonRight.setPosition(buttonLeft.getX() + buttonSize + buttonSpacing, padding); // Spacing between buttons
-        buttonUpward.setPosition(Gdx.graphics.getWidth() - buttonSize - padding, padding);
+        // Position buttons in virtual coordinates
+        float buttonY = padding;
+        buttonLeft.setPosition(padding, buttonY);
+        buttonRight.setPosition(buttonLeft.getX() + buttonSize + buttonSpacing, buttonY);
+
+        // Move jump button left by an offset, keeping it at same elevation as others
+        float jumpButtonOffset = 1.5f * (buttonSize + buttonSpacing); // Move left by 1.5 * button+spacing
+        buttonUpward.setPosition(
+            VIRTUAL_WIDTH - buttonSize  + 25 + padding - jumpButtonOffset,
+            buttonY
+        );
     }
 
     public void render(Batch batch) {
-        float alpha;
-
-        // Check if the buttons are touched and set their alpha accordingly
-        alpha = isLeftButtonTouched() ? 0.7f : 1f;
-        buttonLeft.setAlpha(alpha);
+        // Render buttons with appropriate transparency
+        buttonLeft.setAlpha(isLeftButtonTouched() ? touchedAlpha : untouchedAlpha);
         buttonLeft.draw(batch);
 
-        alpha = isRightButtonTouched() ? 0.7f : 1f;
-        buttonRight.setAlpha(alpha);
+        buttonRight.setAlpha(isRightButtonTouched() ? touchedAlpha : untouchedAlpha);
         buttonRight.draw(batch);
 
-        alpha = isUpwardButtonTouched() ? 0.7f : 1f;
-        buttonUpward.setAlpha(alpha);
+        buttonUpward.setAlpha(isUpwardButtonTouched() ? touchedAlpha : untouchedAlpha);
         buttonUpward.draw(batch);
     }
 
@@ -73,15 +103,26 @@ public class TouchInputHandler {
 
     private boolean checkButtonTouch(Sprite button) {
         Vector3 touchPos = new Vector3();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < MAX_TOUCH_POINTS; i++) {
             if (Gdx.input.isTouched(i)) {
                 touchPos.set(Gdx.input.getX(i), Gdx.input.getY(i), 0);
-                uiCamera.unproject(touchPos); // Convert touch coordinates to world coordinates
+                uiCamera.unproject(touchPos); // Convert to virtual coordinates
                 if (button.getBoundingRectangle().contains(touchPos.x, touchPos.y)) {
-                    return true;
+                    return true; // Early exit on first touch detected
                 }
             }
         }
         return false;
+    }
+
+    public void resize(int screenWidth, int screenHeight) {
+        // No recalculation needed since layout uses virtual coordinates
+    }
+
+    public void dispose() {
+        // Dispose textures owned by the sprites
+        buttonRight.getTexture().dispose();
+        buttonLeft.getTexture().dispose();
+        buttonUpward.getTexture().dispose();
     }
 }

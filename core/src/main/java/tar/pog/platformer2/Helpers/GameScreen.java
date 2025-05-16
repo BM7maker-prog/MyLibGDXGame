@@ -6,12 +6,13 @@ import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.tiled.*;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
-import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
-import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 
 import tar.pog.platformer2.Main.Main;
 import tar.pog.platformer2.Menu.GameOverScreen;
@@ -24,13 +25,17 @@ public class GameScreen extends InputAdapter implements Screen {
 
     final Main game;
 
+    // Core game objects
     private TiledMap map;
     private OrthogonalTiledMapRenderer renderer;
-    private OrthographicCamera camera, uiCamera;
+    private OrthographicCamera camera; // Main game camera
+    private Viewport viewport; // Main game viewport
+    private OrthographicCamera uiCamera; // UI camera for GUI elements
+    private Viewport uiViewport; // Viewport for UI elements
     private Texture playerTexture, playerTextureStand;
     private Animation<TextureRegion> stand, walk, jump;
     private Player player;
-    private Fire fire, fire1, fire2, fire3, fire4;
+    private Fire[] fires;
     private Coin coin;
     private TouchInputHandler touchInputHandler;
     private Pool<Rectangle> rectPool = new Pool<Rectangle>() {
@@ -41,7 +46,7 @@ public class GameScreen extends InputAdapter implements Screen {
     };
 
     private Array<Rectangle> tiles = new Array<>();
-    private boolean debug = false;
+    private boolean debug = true; // Enabled for debugging
     private ShapeRenderer debugRenderer;
     private TileManager tileManager;
     private Slime.SlimeManager slimeManager;
@@ -52,31 +57,50 @@ public class GameScreen extends InputAdapter implements Screen {
     }
 
     private void create() {
-        // Initialize uiCamera before touchInputHandler
-        uiCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        uiCamera.setToOrtho(false);
-        uiCamera.update();
+        // Main game camera and viewport setup
+        camera = new OrthographicCamera();
+        viewport = new FitViewport(30, 20, camera); // Fixed virtual size of 30x20 for the game world
+        viewport.apply();
+
+        // UI camera and viewport setup
+        uiCamera = new OrthographicCamera();
+        uiViewport = new FitViewport(1020, 475, uiCamera); // Fixed virtual size for UI elements
+        uiViewport.apply(true); // Center the UI camera
 
         touchInputHandler = new TouchInputHandler(uiCamera);
 
+        // Load map
         try {
             map = new TmxMapLoader().load("level1.tmx");
         } catch (Exception e) {
             System.err.println("Failed to load level1.tmx: " + e.getMessage());
-            Gdx.app.exit(); return;
+            Gdx.app.exit();
+            return;
         }
 
-        renderer = new OrthogonalTiledMapRenderer(map, 1 / 16f);
+        renderer = new OrthogonalTiledMapRenderer(map, 1 / 16f); // Assuming 16x16 pixel tiles
         tileManager = new TileManager(map, 16f, 1 / 16f);
 
+        // Load player textures
         try {
             playerTexture = new Texture("img/player/player_run.png");
             playerTextureStand = new Texture("img/player/player_standing.png");
         } catch (Exception e) {
             System.err.println("Failed to load player textures: " + e.getMessage());
-            Gdx.app.exit(); return;
+            Gdx.app.exit();
+            return;
         }
 
+        // Setup player animations
+        setupPlayerAnimations();
+
+        // Initialize game objects
+        initializeGameObjects();
+        debugRenderer = new ShapeRenderer();
+        Gdx.input.setInputProcessor(this);
+    }
+
+    private void setupPlayerAnimations() {
         TextureRegion[] regions_forStanding = TextureRegion.split(playerTextureStand, 16, 16)[0];
         TextureRegion[] regions = TextureRegion.split(playerTexture, 16, 16)[0];
         stand = new Animation<>(0.15f, regions_forStanding);
@@ -86,11 +110,9 @@ public class GameScreen extends InputAdapter implements Screen {
 
         Player.WIDTH = 1.5f * (1 / 16f * regions[0].getRegionWidth());
         Player.HEIGHT = 1.5f * (1 / 16f * regions[0].getRegionHeight());
+    }
 
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false, 30, 20);
-        camera.update();
-
+    private void initializeGameObjects() {
         float mapWidth;
         try {
             mapWidth = ((TiledMapTileLayer) map.getLayers().get("walls")).getWidth();
@@ -100,26 +122,40 @@ public class GameScreen extends InputAdapter implements Screen {
 
         slimeManager = new Slime.SlimeManager(mapWidth);
 
-        fire = new Fire(70, -27); fire1 = new Fire(80, -27); fire2 = new Fire(100, -27);
-        fire3 = new Fire(85, -27); fire4 = new Fire(110, -27);
-        coin = new Coin(187, -12);
+        // Adjusted fire and coin positions (assuming ground level at y=0)
+        fires = new Fire[] {
+            new Fire(100, 2),
+            new Fire(125, 2),
+            new Fire(140, 2)
+        };
+        coin = new Coin(187, 0);
 
-        Fire[] fires = {fire, fire1, fire2, fire3, fire4};
         player = new Player(touchInputHandler, tileManager, fires, coin, slimeManager.getSlimes(), rectPool, tiles);
-        player.position.set(20, 20);
+        player.position.set(20, 10); // Adjusted starting position
+    }
 
-        debugRenderer = new ShapeRenderer();
-        Gdx.input.setInputProcessor(this);
+    private void updateCamera() {
+        // Get map dimensions in world units
+        float mapWidthInUnits = ((TiledMapTileLayer) map.getLayers().get("walls")).getWidth();
+        float mapHeightInUnits = ((TiledMapTileLayer) map.getLayers().get("walls")).getHeight();
+
+        // Center camera on player
+        camera.position.set(player.position.x, player.position.y + Player.HEIGHT / 2, 0);
+
+        // Clamp camera to map bounds
+        camera.position.x = MathUtils.clamp(camera.position.x, camera.viewportWidth / 2, mapWidthInUnits - camera.viewportWidth / 2);
+        camera.position.y = MathUtils.clamp(camera.position.y, camera.viewportHeight / 2, mapHeightInUnits - camera.viewportHeight / 2);
+        camera.update();
     }
 
     @Override
     public void render(float deltaTime) {
+        // Clear the screen
         ScreenUtils.clear(0.5f, 0.7f, 1, 1);
-        if (map == null || tileManager == null || player == null) return;
 
+        // Update game logic
         update(deltaTime);
 
-        // Transition to GameOverScreen if the player dies
         if (player.isDead()) {
             System.out.println("Player is dead - switching to GameOverScreen");
             game.setScreen(new GameOverScreen(game));
@@ -127,34 +163,44 @@ public class GameScreen extends InputAdapter implements Screen {
             return;
         }
 
-        camera.position.x = player.position.x;
-        camera.update();
-        renderer.setView(camera);
+        // Update camera
+        updateCamera();
+        renderer.setView(camera); // Apply camera to the map renderer
         renderer.render();
 
+        // Render game objects
         Batch batch = renderer.getBatch();
         batch.begin();
         slimeManager.render(batch);
         coin.renderCoin(batch);
-        fire.renderFire(batch); fire1.renderFire(batch);
-        fire2.renderFire(batch); fire3.renderFire(batch); fire4.renderFire(batch);
+        for (Fire fire : fires) {
+            fire.renderFire(batch);
+        }
         batch.end();
 
+        // Render player
         renderPlayer(deltaTime);
 
+        // Render GUI elements using the UI camera
+        uiViewport.apply(); // Ensure UI viewport is active
+        uiCamera.update();
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
+        // Render touch controls relative to UI viewport (800x480)
         touchInputHandler.render(batch);
         batch.end();
 
+        // Debug rendering
         if (debug) renderDebug();
     }
 
     private void update(float deltaTime) {
         player.update(deltaTime);
         coin.updateCoin(deltaTime);
-        fire.updateFire(deltaTime); fire1.updateFire(deltaTime);
-        fire2.updateFire(deltaTime); fire3.updateFire(deltaTime); fire4.updateFire(deltaTime);
+        for (Fire fire : fires) {
+            fire.updateFire(deltaTime);
+        }
+
         float cameraLeft = camera.position.x - camera.viewportWidth / 2;
         slimeManager.update(deltaTime, cameraLeft);
         player.updateSlimes(slimeManager.getSlimes());
@@ -189,37 +235,49 @@ public class GameScreen extends InputAdapter implements Screen {
     private void renderDebug() {
         debugRenderer.setProjectionMatrix(camera.combined);
         debugRenderer.begin(ShapeRenderer.ShapeType.Line);
-        debugRenderer.setColor(Color.RED);
-        debugRenderer.rect(player.position.x, player.position.y, Player.WIDTH, Player.HEIGHT);
-        slimeManager.debugRender(debugRenderer);
+
+        // Player bounds
+//        debugRenderer.setColor(Color.RED);
+//        debugRenderer.rect(player.position.x, player.position.y, Player.WIDTH, Player.HEIGHT);
+
+        // Map tiles
         debugRenderer.setColor(Color.YELLOW);
         TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get("walls");
-        for (int y = 0; y <= layer.getHeight(); y++) {
-            for (int x = 0; x <= layer.getWidth(); x++) {
-                Cell cell = layer.getCell(x, y);
+        for (int y = 0; y < layer.getHeight(); y++) {
+            for (int x = 0; x < layer.getWidth(); x++) {
+                TiledMapTileLayer.Cell cell = layer.getCell(x, y);
                 if (cell != null && camera.frustum.boundsInFrustum(x + 0.5f, y + 0.5f, 0, 1, 1, 0)) {
-                    debugRenderer.rect(x, y, 1, 1);
+//                    debugRenderer.rect(x, y, 1, 1);
                 }
             }
         }
+
+        // Camera bounds
+//        debugRenderer.setColor(Color.GREEN);
+//        debugRenderer.rect(camera.position.x - camera.viewportWidth / 2,
+//            camera.position.y - camera.viewportHeight / 2,
+//            camera.viewportWidth, camera.viewportHeight);
+
         debugRenderer.end();
     }
 
-    private void resetGame() {
-        player.position.set(20, 20);
-        slimeManager.reset();
-        camera.position.x = player.position.x;
-        camera.update();
+    @Override
+    public void resize(int width, int height) {
+        viewport.update(width, height);
+        uiViewport.update(width, height, true); // Center UI viewport
     }
 
     @Override
-    public boolean keyDown(int keycode) {
-        if (keycode == Input.Keys.R) {
-            resetGame();
-            return true;
-        }
-        return false;
-    }
+    public void pause() {}
+
+    @Override
+    public void resume() {}
+
+    @Override
+    public void hide() {}
+
+    @Override
+    public void show() {}
 
     @Override
     public void dispose() {
@@ -228,13 +286,10 @@ public class GameScreen extends InputAdapter implements Screen {
         if (playerTexture != null) playerTexture.dispose();
         if (playerTextureStand != null) playerTextureStand.dispose();
         if (slimeManager != null) slimeManager.dispose();
-        if (fire != null) fire.dispose();
         if (debugRenderer != null) debugRenderer.dispose();
+        if (touchInputHandler != null) touchInputHandler.dispose();
+        for (Fire fire : fires) {
+            fire.dispose();
+        }
     }
-
-    @Override public void resize(int width, int height) {}
-    @Override public void pause() {}
-    @Override public void resume() {}
-    @Override public void show() {}
-    @Override public void hide() {}
 }
