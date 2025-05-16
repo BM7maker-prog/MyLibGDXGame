@@ -107,18 +107,18 @@ public class Player {
         Rectangle playerRect = rectPool.obtain();
         playerRect.set(position.x, position.y, WIDTH, HEIGHT);
 
-        int startX, startY, endX, endY;
+        float startX, startY, endX, endY;
 
-        // Horizontal collisions
+        // Horizontal collisions (use float, no rounding to int)
         if (tileManager != null) {
             if (velocity.x > 0) {
-                startX = endX = (int)(position.x + WIDTH + velocity.x);
+                startX = endX = position.x + WIDTH + velocity.x;
             } else {
-                startX = endX = (int)(position.x + velocity.x);
+                startX = endX = position.x + velocity.x;
             }
-            startY = (int)(position.y);
-            endY = (int)(position.y + HEIGHT);
-            tileManager.getTiles(startX, startY, endX, endY, tiles);
+            startY = position.y;
+            endY = position.y + HEIGHT;
+            tileManager.getTiles((int)Math.floor(startX), (int)Math.floor(startY), (int)Math.ceil(endX), (int)Math.ceil(endY), tiles);
             playerRect.x += velocity.x;
 
             for (Rectangle tile : tiles) {
@@ -131,13 +131,13 @@ public class Player {
 
             // Vertical collisions
             if (velocity.y > 0) {
-                startY = endY = (int)(position.y + HEIGHT + velocity.y);
+                startY = endY = position.y + HEIGHT + velocity.y;
             } else {
-                startY = endY = (int)(position.y + velocity.y);
+                startY = endY = position.y + velocity.y;
             }
-            startX = (int)(position.x);
-            endX = (int)(position.x + WIDTH);
-            tileManager.getTiles(startX, startY, endX, endY, tiles);
+            startX = position.x;
+            endX = position.x + WIDTH;
+            tileManager.getTiles((int)Math.floor(startX), (int)Math.floor(startY), (int)Math.ceil(endX), (int)Math.ceil(endY), tiles);
             playerRect.y += velocity.y;
 
             for (Rectangle tile : tiles) {
