@@ -51,8 +51,17 @@ public class GameScreen extends InputAdapter implements Screen {
     private TileManager tileManager;
     private Slime.SlimeManager slimeManager;
 
+    private String mapFile = "level1.tmx"; // Default
+
     public GameScreen(Main game) {
+        this(game, "level1.tmx");
+    }
+
+    public GameScreen(Main game, String mapFile) {
         this.game = game;
+        if (mapFile != null && !mapFile.isEmpty()) {
+            this.mapFile = mapFile;
+        }
         create();
     }
 
@@ -71,9 +80,9 @@ public class GameScreen extends InputAdapter implements Screen {
 
         // Load map
         try {
-            map = new TmxMapLoader().load("level1.tmx");
+            map = new TmxMapLoader().load(mapFile);
         } catch (Exception e) {
-            System.err.println("Failed to load level1.tmx: " + e.getMessage());
+            System.err.println("Failed to load " + mapFile + ": " + e.getMessage());
             Gdx.app.exit();
             return;
         }

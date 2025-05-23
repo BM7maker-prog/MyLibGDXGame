@@ -6,7 +6,6 @@ import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-import tar.pog.platformer2.Helpers.GameScreen;
 import tar.pog.platformer2.Main.Main;
 
 public class MainMenuScreen implements Screen {
@@ -53,18 +52,12 @@ public class MainMenuScreen implements Screen {
         layout.setText(font, "BraveHeart's Trail");
         font.draw(batch, layout, (VIRTUAL_WIDTH - layout.width) / 2, 350);
 
-        layout.setText(font, "Tap to Start");
+        layout.setText(font, "Tap or Press Enter to Start");
         font.draw(batch, layout, (VIRTUAL_WIDTH - layout.width) / 2, 250);
         batch.end();
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-            game.setScreen(new GameScreen(game)); // Transition to GameScreen
-            dispose();
-        }
-
-        // Fallback for touch input (mobile)
-        if (Gdx.input.justTouched()) {
-            game.setScreen(new GameScreen(game)); // Transition to GameScreen
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.justTouched()) {
+            game.setScreen(new GameSelectionScreen(game)); // Switch to GameSelectionScreen
             dispose();
         }
     }
