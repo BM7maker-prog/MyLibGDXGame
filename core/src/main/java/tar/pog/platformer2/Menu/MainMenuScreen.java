@@ -52,7 +52,7 @@ public class MainMenuScreen implements Screen {
         layout.setText(font, "BraveHeart's Trail");
         font.draw(batch, layout, (VIRTUAL_WIDTH - layout.width) / 2, 350);
 
-        layout.setText(font, "Tap or Press Enter to Start");
+        layout.setText(font, "Tap to Start");
         font.draw(batch, layout, (VIRTUAL_WIDTH - layout.width) / 2, 250);
         batch.end();
 
