@@ -44,7 +44,7 @@ public class Coin implements Disposable {
     }
 
     public void renderCoin(Batch batch) {
-        float scale = 0.1f; // Scale factor
+        float scale = 1.2f; // Scale factor
         batch.draw(coinAnimation.getKeyFrame(stateTime, true), x, y, width * scale, height * scale);
     }
 

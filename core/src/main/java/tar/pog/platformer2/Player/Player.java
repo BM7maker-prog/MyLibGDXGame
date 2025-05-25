@@ -10,6 +10,7 @@ import tar.pog.platformer2.Helpers.TouchInputHandler;
 import tar.pog.platformer2.Obstacles.Fire;
 import tar.pog.platformer2.NPC.Slime;
 import tar.pog.platformer2.Rewards.Coin;
+import tar.pog.platformer2.Rewards.Liquor;
 
 public class Player {
     public static float WIDTH;
@@ -37,26 +38,31 @@ public class Player {
     private final TileManager tileManager;
     private final Fire[] fires;
     private final Coin coin;
+    private final Liquor[] liquors; // Array of liquors in the level
     private Slime[] slimes; // Nullable slimes array
     private final Pool<Rectangle> rectPool;
     private final Array<Rectangle> tiles;
 
-    // Original constructor (no slimes)
-    public Player(TouchInputHandler touchInputHandler, TileManager tileManager, Fire[] fires, Coin coin,
-                  Pool<Rectangle> rectPool, Array<Rectangle> tiles) {
-        this(touchInputHandler, tileManager, fires, coin, null, rectPool, tiles);
-    }
+    // Powerup states
+    private int liquorJumpsAvailable = 0;
 
     // Constructor with slimes
-    public Player(TouchInputHandler touchInputHandler, TileManager tileManager, Fire[] fires, Coin coin,
+    public Player(TouchInputHandler touchInputHandler, TileManager tileManager, Fire[] fires, Coin coin, Liquor[] liquors,
                   Slime[] slimes, Pool<Rectangle> rectPool, Array<Rectangle> tiles) {
         this.touchInputHandler = touchInputHandler;
         this.tileManager = tileManager;
         this.fires = fires;
         this.coin = coin;
+        this.liquors = liquors;
         this.slimes = slimes; // May be null
         this.rectPool = rectPool;
         this.tiles = tiles;
+    }
+
+    // Original constructor (no slimes)
+    public Player(TouchInputHandler touchInputHandler, TileManager tileManager, Fire[] fires, Coin coin, Liquor[] liquors,
+                  Pool<Rectangle> rectPool, Array<Rectangle> tiles) {
+        this(touchInputHandler, tileManager, fires, coin, liquors, null, rectPool, tiles);
     }
 
     public void updateSlimes(Slime[] newSlimes) {
@@ -72,8 +78,15 @@ public class Player {
         stateTime += deltaTime;
 
         // Check input and apply to velocity & state
-        if (touchInputHandler.isUpwardButtonTouched() && grounded) {
-            velocity.y += JUMP_VELOCITY;
+        boolean jumpPressed = touchInputHandler.isUpwardButtonTouched();
+
+        if (jumpPressed && grounded) {
+            if (liquorJumpsAvailable > 0) {
+                velocity.y += JUMP_VELOCITY * 2f; // Enhanced jump
+                liquorJumpsAvailable--;
+            } else {
+                velocity.y += JUMP_VELOCITY;
+            }
             state = State.Jumping;
             grounded = false;
         }
@@ -174,6 +187,16 @@ public class Player {
             }
         }
 
+        // Powerup: Liquors (multiple)
+        if (liquors != null) {
+            for (Liquor liquor : liquors) {
+                if (liquor != null && !liquor.isCollected() && playerRect.overlaps(liquor.getBoundingBox())) {
+                    liquor.collect();
+                    liquorJumpsAvailable++;
+                }
+            }
+        }
+
         rectPool.free(playerRect);
 
         // Check if player falls off map
@@ -207,5 +230,14 @@ public class Player {
         facesRight = true;
         stateTime = 0;
         dead = false; // Reset death state
+        liquorJumpsAvailable = 0;
+        // Optionally reset liquors' collected state here if you want them to respawn on restart
+        if (liquors != null) {
+            for (Liquor liquor : liquors) {
+                if (liquor != null) {
+                    liquor.reset();
+                }
+            }
+        }
     }
 }

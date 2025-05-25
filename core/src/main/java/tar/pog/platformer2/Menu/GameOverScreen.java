@@ -34,8 +34,13 @@ public class GameOverScreen implements Screen {
     // Texture for drawing button background
     private static Texture white;
 
-    public GameOverScreen(final Main game) {
+    // Store the map file that was active when the player died
+    private final String mapFile;
+
+    // Constructor now takes current map file as argument
+    public GameOverScreen(final Main game, String mapFile) {
         this.game = game;
+        this.mapFile = mapFile != null ? mapFile : "level1.tmx";
 
         // Initialize camera and viewport
         camera = new OrthographicCamera();
@@ -106,8 +111,8 @@ public class GameOverScreen implements Screen {
                 dispose();
                 return;
             } else {
-                // If not main menu button, restart game
-                game.setScreen(new GameScreen(game));
+                // If not main menu button, restart game at the current map where player died
+                game.setScreen(new GameScreen(game, mapFile));
                 dispose();
                 return;
             }

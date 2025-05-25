@@ -13,13 +13,13 @@ import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-
 import tar.pog.platformer2.Main.Main;
 import tar.pog.platformer2.Menu.GameOverScreen;
 import tar.pog.platformer2.Obstacles.Fire;
 import tar.pog.platformer2.NPC.Slime;
 import tar.pog.platformer2.Player.Player;
 import tar.pog.platformer2.Rewards.Coin;
+import tar.pog.platformer2.Rewards.Liquor;
 
 public class GameScreen extends InputAdapter implements Screen {
 
@@ -37,6 +37,7 @@ public class GameScreen extends InputAdapter implements Screen {
     private Player player;
     private Fire[] fires;
     private Coin coin;
+    private Liquor[] liquors; // Multiple liquors
     private TouchInputHandler touchInputHandler;
     private Pool<Rectangle> rectPool = new Pool<Rectangle>() {
         @Override
@@ -51,7 +52,7 @@ public class GameScreen extends InputAdapter implements Screen {
     private TileManager tileManager;
     private Slime.SlimeManager slimeManager;
 
-    private String mapFile = "level1.tmx"; // Default
+    public String mapFile = "level1.tmx"; // Default
 
     public GameScreen(Main game) {
         this(game, "level1.tmx");
@@ -121,6 +122,10 @@ public class GameScreen extends InputAdapter implements Screen {
         Player.HEIGHT = 1.5f * (1 / 16f * regions[0].getRegionHeight());
     }
 
+    /**
+     * This method uses different positions for fire, coin, slimeManager, and player
+     * depending on which map is loaded.
+     */
     private void initializeGameObjects() {
         float mapWidth;
         try {
@@ -129,29 +134,85 @@ public class GameScreen extends InputAdapter implements Screen {
             mapWidth = 100f;
         }
 
-        slimeManager = new Slime.SlimeManager(mapWidth);
+        // Example: 2 liquors in level4.tmx
+        if ("level4.tmx".equals(mapFile)) {
+            slimeManager = new Slime.SlimeManager(mapWidth, mapFile);
+            fires = new Fire[] {
+                new Fire(50, 11),
+                new Fire(55, 11),
+                new Fire(97, 5)
+            };
+            coin = new Coin(200, 6);
+            liquors = new Liquor[] {
+                new Liquor(60, 11),
+                new Liquor(119, 3)
+            };
+            player = new Player(touchInputHandler, tileManager, fires, coin, liquors, slimeManager.getSlimes(), rectPool, tiles);
+            player.position.set(15, 11);
+        } else if ("level3.tmx".equals(mapFile)) {
+            slimeManager = new Slime.SlimeManager(mapWidth, mapFile);
+            fires = new Fire[] {
+                new Fire(195, 2),
+                new Fire(78, 5),
+                new Fire(118, 5)
+            };
+            coin = new Coin(200, 2);
+            liquors = new Liquor[] { new Liquor(175, 2) };
+            player = new Player(touchInputHandler, tileManager, fires, coin, liquors, slimeManager.getSlimes(), rectPool, tiles);
+            player.position.set(15, 8);
+        } else if ("level2.tmx".equals(mapFile)) {
+            slimeManager = new Slime.SlimeManager(mapWidth, mapFile);
+            fires = new Fire[] {
+                new Fire(46, 7),
+                new Fire(73, 2),
+                new Fire(116, 6)
+            };
+            coin = new Coin(100, 1);
+            liquors = new Liquor[] { new Liquor(70, 2) };
+            player = new Player(touchInputHandler, tileManager, fires, coin, liquors, slimeManager.getSlimes(), rectPool, tiles);
+            player.position.set(15, 8);
+        } else if ("level5.tmx".equals(mapFile)) {
+            slimeManager = new Slime.SlimeManager(mapWidth, mapFile);
+            fires = new Fire[] {
+                new Fire(50, 3),
 
-        // Adjusted fire and coin positions (assuming ground level at y=0)
-        fires = new Fire[] {
-            new Fire(100, 2),
-            new Fire(125, 2),
-            new Fire(140, 2)
-        };
-        coin = new Coin(187, 0);
-
-        player = new Player(touchInputHandler, tileManager, fires, coin, slimeManager.getSlimes(), rectPool, tiles);
-        player.position.set(20, 10); // Adjusted starting position
+            };
+            coin = new Coin(203, 14);
+            liquors = new Liquor[] { new Liquor(198, 2) };
+            player = new Player(touchInputHandler, tileManager, fires, coin, liquors, slimeManager.getSlimes(), rectPool, tiles);
+            player.position.set(169, 8);
+        } else if ("level6.tmx".equals(mapFile)) {
+            slimeManager = new Slime.SlimeManager(mapWidth, mapFile);
+            fires = new Fire[] {
+                new Fire(50, 3),
+                new Fire(60, 3),
+                new Fire(80, 2)
+            };
+            coin = new Coin(100, 1);
+            liquors = new Liquor[] { new Liquor(70, 2) };
+            player = new Player(touchInputHandler, tileManager, fires, coin, liquors, slimeManager.getSlimes(), rectPool, tiles);
+            player.position.set(15, 8);
+        } else {
+            // Default positions (for level1 and others)
+            slimeManager = new Slime.SlimeManager(mapWidth, mapFile);
+            fires = new Fire[] {
+                new Fire(100, 2),
+                new Fire(125, 2),
+                new Fire(140, 2)
+            };
+            coin = new Coin(187, 0);
+            liquors = new Liquor[] { new Liquor(90, 2) };
+            player = new Player(touchInputHandler, tileManager, fires, coin, liquors, slimeManager.getSlimes(), rectPool, tiles);
+            player.position.set(15, 10);
+        }
     }
 
     private void updateCamera() {
-        // Get map dimensions in world units
         float mapWidthInUnits = ((TiledMapTileLayer) map.getLayers().get("walls")).getWidth();
         float mapHeightInUnits = ((TiledMapTileLayer) map.getLayers().get("walls")).getHeight();
 
-        // Center camera on player
         camera.position.set(player.position.x, player.position.y + Player.HEIGHT / 2, 0);
 
-        // Clamp camera to map bounds
         camera.position.x = MathUtils.clamp(camera.position.x, camera.viewportWidth / 2, mapWidthInUnits - camera.viewportWidth / 2);
         camera.position.y = MathUtils.clamp(camera.position.y, camera.viewportHeight / 2, mapHeightInUnits - camera.viewportHeight / 2);
         camera.update();
@@ -159,29 +220,30 @@ public class GameScreen extends InputAdapter implements Screen {
 
     @Override
     public void render(float deltaTime) {
-        // Clear the screen
         ScreenUtils.clear(0.5f, 0.7f, 1, 1);
 
-        // Update game logic
         update(deltaTime);
 
         if (player.isDead()) {
             System.out.println("Player is dead - switching to GameOverScreen");
-            game.setScreen(new GameOverScreen(game));
+            game.setScreen(new GameOverScreen(game, mapFile));
             dispose();
             return;
         }
 
-        // Update camera
         updateCamera();
-        renderer.setView(camera); // Apply camera to the map renderer
+        renderer.setView(camera);
         renderer.render();
 
-        // Render game objects
         Batch batch = renderer.getBatch();
         batch.begin();
         slimeManager.render(batch);
         coin.renderCoin(batch);
+        if (liquors != null) {
+            for (Liquor liquor : liquors) {
+                if (liquor != null) liquor.render(batch);
+            }
+        }
         for (Fire fire : fires) {
             fire.renderFire(batch);
         }
@@ -191,21 +253,20 @@ public class GameScreen extends InputAdapter implements Screen {
         renderPlayer(deltaTime);
 
         // Render GUI elements using the UI camera
-        uiViewport.apply(); // Ensure UI viewport is active
+        uiViewport.apply();
         uiCamera.update();
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
-        // Render touch controls relative to UI viewport (800x480)
         touchInputHandler.render(batch);
         batch.end();
 
-        // Debug rendering
         if (debug) renderDebug();
     }
 
     private void update(float deltaTime) {
         player.update(deltaTime);
         coin.updateCoin(deltaTime);
+        // Optionally: update liquor animations here if needed
         for (Fire fire : fires) {
             fire.updateFire(deltaTime);
         }
@@ -246,8 +307,8 @@ public class GameScreen extends InputAdapter implements Screen {
         debugRenderer.begin(ShapeRenderer.ShapeType.Line);
 
         // Player bounds
-//        debugRenderer.setColor(Color.RED);
-//        debugRenderer.rect(player.position.x, player.position.y, Player.WIDTH, Player.HEIGHT);
+        // debugRenderer.setColor(Color.RED);
+        // debugRenderer.rect(player.position.x, player.position.y, Player.WIDTH, Player.HEIGHT);
 
         // Map tiles
         debugRenderer.setColor(Color.YELLOW);
@@ -256,16 +317,16 @@ public class GameScreen extends InputAdapter implements Screen {
             for (int x = 0; x < layer.getWidth(); x++) {
                 TiledMapTileLayer.Cell cell = layer.getCell(x, y);
                 if (cell != null && camera.frustum.boundsInFrustum(x + 0.5f, y + 0.5f, 0, 1, 1, 0)) {
-//                    debugRenderer.rect(x, y, 1, 1);
+                    // debugRenderer.rect(x, y, 1, 1);
                 }
             }
         }
 
         // Camera bounds
-//        debugRenderer.setColor(Color.GREEN);
-//        debugRenderer.rect(camera.position.x - camera.viewportWidth / 2,
-//            camera.position.y - camera.viewportHeight / 2,
-//            camera.viewportWidth, camera.viewportHeight);
+        // debugRenderer.setColor(Color.GREEN);
+        // debugRenderer.rect(camera.position.x - camera.viewportWidth / 2,
+        //     camera.position.y - camera.viewportHeight / 2,
+        //     camera.viewportWidth, camera.viewportHeight);
 
         debugRenderer.end();
     }
@@ -273,7 +334,7 @@ public class GameScreen extends InputAdapter implements Screen {
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height);
-        uiViewport.update(width, height, true); // Center UI viewport
+        uiViewport.update(width, height, true);
     }
 
     @Override
@@ -297,6 +358,11 @@ public class GameScreen extends InputAdapter implements Screen {
         if (slimeManager != null) slimeManager.dispose();
         if (debugRenderer != null) debugRenderer.dispose();
         if (touchInputHandler != null) touchInputHandler.dispose();
+        if (liquors != null) {
+            for (Liquor liquor : liquors) {
+                if (liquor != null) liquor.dispose();
+            }
+        }
         for (Fire fire : fires) {
             fire.dispose();
         }

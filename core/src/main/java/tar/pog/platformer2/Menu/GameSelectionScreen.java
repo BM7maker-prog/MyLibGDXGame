@@ -115,7 +115,21 @@ public class GameSelectionScreen implements Screen {
             float inputY = getInputY();
             for (int i = 0; i < NUM_MAPS; i++) {
                 if (buttonRects[i].contains(inputX, inputY)) {
-                    game.setScreen(new GameScreen(game, "level" + (i + 1) + ".tmx"));
+                    String mapFile;
+                    if (i == 1) {
+                        mapFile = "level2.tmx"; // Assign level2.tmx to Map 2 button
+                    } else if (i == 2) {
+                        mapFile = "level3.tmx"; // Assign level3.tmx to Map 3 button
+                    } else if (i == 3) {
+                        mapFile = "level4.tmx"; // Assign level3.tmx to Map 3 button
+                    }else if (i == 4) {
+                        mapFile = "level5.tmx"; // Assign level3.tmx to Map 3 button
+                    }else if (i == 5 ) {
+                        mapFile = "level6.tmx"; // Assign level3.tmx to Map 3 button
+                    }else {
+                        mapFile = "level" + (i + 1) + ".tmx";
+                    }
+                    game.setScreen(new GameScreen(game, mapFile));
                     dispose();
                     return;
                 }
