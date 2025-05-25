@@ -188,7 +188,7 @@ public class GameScreen extends InputAdapter implements Screen {
             coin = new Coin(205, 2);
 
             player = new Player(touchInputHandler, tileManager, fires, coin, liquors, slimeManager.getSlimes(), rectPool, tiles);
-            player.position.set(150, 8);
+            player.position.set(15, 8);
         }
 
 
