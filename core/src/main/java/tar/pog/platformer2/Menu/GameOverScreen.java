@@ -27,9 +27,11 @@ public class GameOverScreen implements Screen {
     private static final float BUTTON_WIDTH = 300f;
     private static final float BUTTON_HEIGHT = 70f;
     private static final float BUTTON_X = (VIRTUAL_WIDTH - BUTTON_WIDTH) / 2f;
-    private static final float BUTTON_Y = 120f;
+    private static final float RESTART_BUTTON_Y = 220f;
+    private static final float MENU_BUTTON_Y = 120f;
 
     private Rectangle mainMenuButtonRect;
+    private Rectangle restartButtonRect;
 
     // Texture for drawing button background
     private static Texture white;
@@ -55,7 +57,8 @@ public class GameOverScreen implements Screen {
         font.getData().setScale(2f);
         layout = new GlyphLayout();
 
-        mainMenuButtonRect = new Rectangle(BUTTON_X, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
+        mainMenuButtonRect = new Rectangle(BUTTON_X, MENU_BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
+        restartButtonRect = new Rectangle(BUTTON_X, RESTART_BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
     }
 
     @Override
@@ -71,17 +74,27 @@ public class GameOverScreen implements Screen {
         batch.begin();
         layout.setText(font, "GAME OVER");
         font.draw(batch, layout, (VIRTUAL_WIDTH - layout.width) / 2, 350);
-
-        layout.setText(font, "Tap to Restart");
-        font.draw(batch, layout, (VIRTUAL_WIDTH - layout.width) / 2, 250);
         batch.end();
+
+        // Draw the Restart button
+        drawRect(restartButtonRect.x, restartButtonRect.y, restartButtonRect.width, restartButtonRect.height,
+            isMouseOverRestart() ? Color.DARK_GRAY : Color.GRAY);
 
         // Draw the Main Menu button
         drawRect(mainMenuButtonRect.x, mainMenuButtonRect.y, mainMenuButtonRect.width, mainMenuButtonRect.height,
-            isMouseOverButton() ? Color.DARK_GRAY : Color.GRAY);
+            isMouseOverMenu() ? Color.DARK_GRAY : Color.GRAY);
 
         batch.begin();
-        font.setColor(isMouseOverButton() ? Color.YELLOW : Color.WHITE);
+        // Restart Button Text
+        font.setColor(isMouseOverRestart() ? Color.YELLOW : Color.WHITE);
+        layout.setText(font, "Restart");
+        font.draw(batch, layout,
+            restartButtonRect.x + (restartButtonRect.width - layout.width) / 2,
+            restartButtonRect.y + (restartButtonRect.height + layout.height) / 2 - 8
+        );
+
+        // Main Menu Button Text
+        font.setColor(isMouseOverMenu() ? Color.YELLOW : Color.WHITE);
         layout.setText(font, "Main Menu");
         font.draw(batch, layout,
             mainMenuButtonRect.x + (mainMenuButtonRect.width - layout.width) / 2,
@@ -92,7 +105,7 @@ public class GameOverScreen implements Screen {
 
         // Input handling
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-            game.setScreen(new MainMenuScreen(game)); // Transition to MainMenuScreen
+            game.setScreen(new GameScreen(game, mapFile)); // Restart map
             dispose();
             return;
         }
@@ -102,24 +115,28 @@ public class GameOverScreen implements Screen {
             return;
         }
 
-        // Touch/click handling for Main Menu button
         if (Gdx.input.justTouched()) {
             float mouseX = getInputX();
             float mouseY = getInputY();
-            if (mainMenuButtonRect.contains(mouseX, mouseY)) {
-                game.setScreen(new MainMenuScreen(game));
+            if (restartButtonRect.contains(mouseX, mouseY)) {
+                game.setScreen(new GameScreen(game, mapFile));
                 dispose();
                 return;
-            } else {
-                // If not main menu button, restart game at the current map where player died
-                game.setScreen(new GameScreen(game, mapFile));
+            } else if (mainMenuButtonRect.contains(mouseX, mouseY)) {
+                game.setScreen(new MainMenuScreen(game));
                 dispose();
                 return;
             }
         }
     }
 
-    private boolean isMouseOverButton() {
+    private boolean isMouseOverRestart() {
+        float mouseX = getInputX();
+        float mouseY = getInputY();
+        return restartButtonRect.contains(mouseX, mouseY);
+    }
+
+    private boolean isMouseOverMenu() {
         float mouseX = getInputX();
         float mouseY = getInputY();
         return mainMenuButtonRect.contains(mouseX, mouseY);

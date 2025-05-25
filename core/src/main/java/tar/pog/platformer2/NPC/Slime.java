@@ -112,11 +112,10 @@ public class Slime {
 //                {200, 210, 1.0f}
             });
             mapPatrolZones.put("level5.tmx", new float[][]{
-                {18, 27, 3.0f},
+//                {18, 27, 3.0f},
 
             });
             mapPatrolZones.put("level6.tmx", new float[][]{
-                {15, 23, 2.0f},
                 {60, 70, 3.2f},
                 {135, 150, 2.6f}
             });

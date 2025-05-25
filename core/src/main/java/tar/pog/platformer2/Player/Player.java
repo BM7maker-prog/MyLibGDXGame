@@ -169,14 +169,15 @@ public class Player {
             System.err.println("Warning: tileManager is null, skipping collision detection");
         }
 
-        // Check collisions with fires, coin, and slimes
+        // Check collisions with fires and slimes, but not coin
         for (Fire fire : fires) {
             if (playerRect.overlaps(fire.getBoundingBox())) {
                 markAsDead();
             }
         }
+        // If player touches the coin, collect it but DON'T die
         if (playerRect.overlaps(coin.getBoundingBox())) {
-            markAsDead();
+            coin.collect();
         }
         // Only check slimes if the array is not null
         if (slimes != null) {

@@ -15,6 +15,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import tar.pog.platformer2.Main.Main;
 import tar.pog.platformer2.Menu.GameOverScreen;
+import tar.pog.platformer2.Menu.MainMenuScreen;
 import tar.pog.platformer2.Obstacles.Fire;
 import tar.pog.platformer2.NPC.Slime;
 import tar.pog.platformer2.Player.Player;
@@ -53,6 +54,19 @@ public class GameScreen extends InputAdapter implements Screen {
     private Slime.SlimeManager slimeManager;
 
     public String mapFile = "level1.tmx"; // Default
+
+    // Level progression: add all your level files here in order
+    private static final String[] MAP_FILES = {
+        "level1.tmx",
+        "level2.tmx",
+        "level3.tmx",
+        "level5.tmx",
+        "level4.tmx",
+        "level6.tmx"
+        // Add more as needed
+    };
+
+    private boolean coinCollected = false; // Track if coin was just collected
 
     public GameScreen(Main game) {
         this(game, "level1.tmx");
@@ -149,7 +163,9 @@ public class GameScreen extends InputAdapter implements Screen {
             };
             player = new Player(touchInputHandler, tileManager, fires, coin, liquors, slimeManager.getSlimes(), rectPool, tiles);
             player.position.set(15, 11);
-        } else if ("level3.tmx".equals(mapFile)) {
+        }
+
+        else if ("level3.tmx".equals(mapFile)) {
             slimeManager = new Slime.SlimeManager(mapWidth, mapFile);
             fires = new Fire[] {
                 new Fire(195, 2),
@@ -157,30 +173,34 @@ public class GameScreen extends InputAdapter implements Screen {
                 new Fire(118, 5)
             };
             coin = new Coin(200, 2);
-            liquors = new Liquor[] { new Liquor(175, 2) };
+
             player = new Player(touchInputHandler, tileManager, fires, coin, liquors, slimeManager.getSlimes(), rectPool, tiles);
             player.position.set(15, 8);
-        } else if ("level2.tmx".equals(mapFile)) {
+        }
+
+        else if ("level2.tmx".equals(mapFile)) {
             slimeManager = new Slime.SlimeManager(mapWidth, mapFile);
             fires = new Fire[] {
                 new Fire(46, 7),
                 new Fire(73, 2),
                 new Fire(116, 6)
             };
-            coin = new Coin(100, 1);
-            liquors = new Liquor[] { new Liquor(70, 2) };
+            coin = new Coin(205, 2);
+
             player = new Player(touchInputHandler, tileManager, fires, coin, liquors, slimeManager.getSlimes(), rectPool, tiles);
-            player.position.set(15, 8);
-        } else if ("level5.tmx".equals(mapFile)) {
+            player.position.set(150, 8);
+        }
+
+
+        else if ("level5.tmx".equals(mapFile)) {
             slimeManager = new Slime.SlimeManager(mapWidth, mapFile);
             fires = new Fire[] {
-                new Fire(50, 3),
-
+                new Fire(65, 8),
             };
             coin = new Coin(203, 14);
             liquors = new Liquor[] { new Liquor(198, 2) };
             player = new Player(touchInputHandler, tileManager, fires, coin, liquors, slimeManager.getSlimes(), rectPool, tiles);
-            player.position.set(169, 8);
+            player.position.set(15, 8);
         } else if ("level6.tmx".equals(mapFile)) {
             slimeManager = new Slime.SlimeManager(mapWidth, mapFile);
             fires = new Fire[] {
@@ -200,10 +220,28 @@ public class GameScreen extends InputAdapter implements Screen {
                 new Fire(125, 2),
                 new Fire(140, 2)
             };
-            coin = new Coin(187, 0);
-            liquors = new Liquor[] { new Liquor(90, 2) };
+            coin = new Coin(200, 2);
+//            liquors = new Liquor[] { new Liquor(90, 2) };
             player = new Player(touchInputHandler, tileManager, fires, coin, liquors, slimeManager.getSlimes(), rectPool, tiles);
             player.position.set(15, 10);
+        }
+        coinCollected = false; // Reset on new level
+    }
+
+    private int getCurrentMapIndex() {
+        for (int i = 0; i < MAP_FILES.length; i++) {
+            if (MAP_FILES[i].equals(mapFile)) return i;
+        }
+        return 0;
+    }
+
+    private String getNextMapFile() {
+        int idx = getCurrentMapIndex();
+        if (idx + 1 < MAP_FILES.length) {
+            return MAP_FILES[idx + 1];
+        } else {
+            // Optionally go to menu or "You Win" screen
+            return null;
         }
     }
 
@@ -227,6 +265,20 @@ public class GameScreen extends InputAdapter implements Screen {
         if (player.isDead()) {
             System.out.println("Player is dead - switching to GameOverScreen");
             game.setScreen(new GameOverScreen(game, mapFile));
+            dispose();
+            return;
+        }
+
+        // --- Level progression: if coin was collected, go to next level ---
+        if (!coinCollected && coin != null && coin.isCollected()) {
+            coinCollected = true;
+            String nextMap = getNextMapFile();
+            if (nextMap != null) {
+                game.setScreen(new GameScreen(game, nextMap));
+            } else {
+                // If no more maps, go to main menu (optional: add win screen)
+                game.setScreen(new MainMenuScreen(game));
+            }
             dispose();
             return;
         }

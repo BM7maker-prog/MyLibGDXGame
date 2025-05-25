@@ -15,6 +15,8 @@ public class Coin implements Disposable {
     private float width, height;
     public int coinCount = 0;
 
+    private boolean collected = false; // <-- ADD THIS
+
     public Coin(float x, float y) {
         this.x = x;
         this.y = y;
@@ -45,7 +47,9 @@ public class Coin implements Disposable {
 
     public void renderCoin(Batch batch) {
         float scale = 1.2f; // Scale factor
-        batch.draw(coinAnimation.getKeyFrame(stateTime, true), x, y, width * scale, height * scale);
+        if (!collected) {
+            batch.draw(coinAnimation.getKeyFrame(stateTime, true), x, y, width * scale, height * scale);
+        }
     }
 
     public Rectangle getBoundingBox() {
@@ -55,6 +59,29 @@ public class Coin implements Disposable {
 
     public float getHeight() { return height; }
     public float getWidth() { return width; }
+
+    // --- ADDED FUNCTIONS BELOW ---
+
+    /**
+     * Returns true if the coin has been collected.
+     */
+    public boolean isCollected() {
+        return collected;
+    }
+
+    /**
+     * Call this when the player collects the coin.
+     */
+    public void collect() {
+        collected = true;
+    }
+
+    /**
+     * Resets the coin to uncollected state.
+     */
+    public void reset() {
+        collected = false;
+    }
 
     @Override
     public void dispose() {

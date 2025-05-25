@@ -19,11 +19,23 @@ public class GameSelectionScreen implements Screen {
 
     private static final float VIRTUAL_WIDTH = 800f;
     private static final float VIRTUAL_HEIGHT = 480f;
-    private static final int NUM_MAPS = 10; // adjust as needed
+    private static final int NUM_MAPS = 7;
     private static final float BUTTON_WIDTH = 120f;
     private static final float BUTTON_HEIGHT = 240f;
-    private static final float BUTTON_SPACING = 25f;
+    private static final float BUTTON_SPACING = 30f;
     private final Rectangle[] buttonRects = new Rectangle[NUM_MAPS];
+
+    // ---- CONSTANT COLORS ----
+    private static final Color BG_COLOR = new Color(0, 0.15f, 0.15f, 1);
+    private static final Color BUTTON_NORMAL = Color.GRAY.cpy();
+    private static final Color BUTTON_HOVER = Color.DARK_GRAY.cpy();
+    private static final Color BUTTON_TEXT = Color.WHITE.cpy();
+    private static final Color BUTTON_TEXT_HOVER = Color.YELLOW.cpy();
+    private static final Color BUTTON_DISABLED = Color.DARK_GRAY.cpy();
+    private static final Color BUTTON_TEXT_DISABLED = new Color(1f, 1f, 1f, 0.4f);
+    private static final Color SCROLLBAR_BG = new Color(0.2f, 0.2f, 0.2f, 0.4f);
+    private static final Color SCROLLBAR_THUMB = Color.LIGHT_GRAY.cpy();
+    private static final Color SCROLLBAR_THUMB_DRAG = Color.YELLOW.cpy();
 
     // Horizontal scroll variables
     private float scrollX = 0;
@@ -31,7 +43,6 @@ public class GameSelectionScreen implements Screen {
     private float lastTouchX = -1;
     private boolean dragging = false;
 
-    // Scrollbar visuals
     private static final float SCROLLBAR_HEIGHT = 16f;
     private static final float SCROLLBAR_Y = 32f;
     private Rectangle scrollbarRect;
@@ -49,7 +60,7 @@ public class GameSelectionScreen implements Screen {
         camera.update();
         batch = new SpriteBatch();
         font = new BitmapFont();
-        font.setColor(Color.WHITE);
+        font.setColor(BUTTON_TEXT);
         font.getData().setScale(2f);
         layout = new GlyphLayout();
         setupButtons();
@@ -70,7 +81,7 @@ public class GameSelectionScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(0, 0.15f, 0.15f, 1);
+        Gdx.gl.glClearColor(BG_COLOR.r, BG_COLOR.g, BG_COLOR.b, BG_COLOR.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         handleTouchScroll();
@@ -81,7 +92,7 @@ public class GameSelectionScreen implements Screen {
 
         batch.begin();
         layout.setText(font, "Select Map");
-        font.setColor(Color.WHITE); // Always reset before drawing text
+        font.setColor(BUTTON_TEXT); // Always reset before drawing text
         font.draw(batch, layout, (VIRTUAL_WIDTH - layout.width) / 2, VIRTUAL_HEIGHT - 80);
 
         // Draw buttons (with scrollX offset)
@@ -89,19 +100,31 @@ public class GameSelectionScreen implements Screen {
             Rectangle rect = buttonRects[i];
             float rx = rect.x - scrollX;
             Rectangle drawRect = new Rectangle(rx, rect.y, rect.width, rect.height);
-            boolean hovered = drawRect.contains(getInputX(), getInputY()) && !isTouchOnScrollbar();
-            batch.setColor(hovered ? Color.DARK_GRAY : Color.GRAY);
-            drawRect(drawRect.x, drawRect.y, drawRect.width, drawRect.height);
-            batch.setColor(Color.WHITE); // Reset after drawing button bg
 
-            font.setColor(hovered ? Color.YELLOW : Color.WHITE);
+            boolean isDisabled = (i == 5 || i == 6); // 6th and 7th buttons disabled (0-based)
+            boolean hovered = drawRect.contains(getInputX(), getInputY()) && !isTouchOnScrollbar();
+
+            if (isDisabled) {
+                batch.setColor(BUTTON_DISABLED);
+            } else {
+                batch.setColor(hovered ? BUTTON_HOVER : BUTTON_NORMAL);
+            }
+            drawRect(drawRect.x, drawRect.y, drawRect.width, drawRect.height);
+            batch.setColor(Color.WHITE);
+
+            if (isDisabled) {
+                font.setColor(BUTTON_TEXT_DISABLED);
+            } else {
+                font.setColor(hovered ? BUTTON_TEXT_HOVER : BUTTON_TEXT);
+            }
             String label = "Map " + (i + 1);
+            if (isDisabled) label += "\nLocked";
             layout.setText(font, label);
             font.draw(batch, layout,
                 drawRect.x + (drawRect.width - layout.width) / 2,
                 drawRect.y + drawRect.height / 2 + layout.height / 2
             );
-            font.setColor(Color.WHITE); // Reset font color
+            font.setColor(BUTTON_TEXT);
         }
 
         // Draw scrollbar
@@ -109,24 +132,23 @@ public class GameSelectionScreen implements Screen {
 
         batch.end();
 
-        // Button click
+        // Button click (disable for 6th and 7th)
         if (Gdx.input.justTouched() && !dragging && !isTouchOnScrollbar()) {
             float inputX = getInputX() + scrollX;
             float inputY = getInputY();
             for (int i = 0; i < NUM_MAPS; i++) {
-                if (buttonRects[i].contains(inputX, inputY)) {
+                boolean isDisabled = (i == 5 || i == 6);
+                if (buttonRects[i].contains(inputX, inputY) && !isDisabled) {
                     String mapFile;
                     if (i == 1) {
-                        mapFile = "level2.tmx"; // Assign level2.tmx to Map 2 button
+                        mapFile = "level2.tmx";
                     } else if (i == 2) {
-                        mapFile = "level3.tmx"; // Assign level3.tmx to Map 3 button
+                        mapFile = "level3.tmx";
                     } else if (i == 3) {
-                        mapFile = "level4.tmx"; // Assign level3.tmx to Map 3 button
-                    }else if (i == 4) {
-                        mapFile = "level5.tmx"; // Assign level3.tmx to Map 3 button
-                    }else if (i == 5 ) {
-                        mapFile = "level6.tmx"; // Assign level3.tmx to Map 3 button
-                    }else {
+                        mapFile = "level5.tmx";
+                    } else if (i == 4) {
+                        mapFile = "level4.tmx";
+                    } else {
                         mapFile = "level" + (i + 1) + ".tmx";
                     }
                     game.setScreen(new GameScreen(game, mapFile));
@@ -140,26 +162,22 @@ public class GameSelectionScreen implements Screen {
     private void handleTouchScroll() {
         if (maxScrollX <= 0) return;
 
-        // Touch handling for scrollbar (mobile friendly)
         if (Gdx.input.isTouched()) {
             float tx = getInputX();
             float ty = getInputY();
 
-            // If just started touch and on scrollbar, capture scrollbar drag
             if (!dragging && Gdx.input.justTouched() && isTouchOnScrollbar()) {
                 scrollbarTouched = true;
                 scrollbarTouchOffset = tx - scrollbarRect.x;
             }
 
             if (scrollbarTouched) {
-                // Move scrollbar bar and update scrollX accordingly
                 float barWidth = scrollbarRect.width;
                 float newBarX = tx - scrollbarTouchOffset;
                 newBarX = Math.max(0, Math.min(newBarX, VIRTUAL_WIDTH - barWidth));
                 scrollbarRect.x = newBarX;
                 scrollX = maxScrollX * (scrollbarRect.x / (VIRTUAL_WIDTH - barWidth));
             } else {
-                // Button area scroll by dragging
                 if (!dragging) {
                     lastTouchX = tx;
                     dragging = false;
@@ -177,7 +195,6 @@ public class GameSelectionScreen implements Screen {
             scrollbarTouched = false;
         }
 
-        // Update scrollbar thumb position based on scrollX if not dragging bar
         if (!scrollbarTouched && maxScrollX > 0) {
             float barWidth = scrollbarRect.width;
             scrollbarRect.x = (scrollX / maxScrollX) * (VIRTUAL_WIDTH - barWidth);
@@ -186,13 +203,19 @@ public class GameSelectionScreen implements Screen {
 
     private void drawScrollbar() {
         if (maxScrollX <= 0) return;
-        // Scrollbar background
-        batch.setColor(new Color(0.2f, 0.2f, 0.2f, 0.4f));
+        batch.setColor(SCROLLBAR_BG);
         drawRect(0, SCROLLBAR_Y, VIRTUAL_WIDTH, SCROLLBAR_HEIGHT);
-        // Scrollbar thumb/bar
-        batch.setColor(scrollbarTouched ? Color.YELLOW : Color.LIGHT_GRAY);
+        batch.setColor(scrollbarTouched ? SCROLLBAR_THUMB_DRAG : SCROLLBAR_THUMB);
         drawRect(scrollbarRect.x, scrollbarRect.y, scrollbarRect.width, scrollbarRect.height);
-        batch.setColor(Color.WHITE); // Reset batch color
+        batch.setColor(Color.WHITE);
+    }
+
+    private float getInputX() {
+        return Gdx.input.getX() * (VIRTUAL_WIDTH / (float)Gdx.graphics.getWidth());
+    }
+
+    private float getInputY() {
+        return VIRTUAL_HEIGHT - Gdx.input.getY() * (VIRTUAL_HEIGHT / (float)Gdx.graphics.getHeight());
     }
 
     private boolean isTouchOnScrollbar() {
@@ -200,13 +223,6 @@ public class GameSelectionScreen implements Screen {
         float tx = getInputX();
         float ty = getInputY();
         return scrollbarRect.contains(tx, ty);
-    }
-
-    private float getInputX() {
-        return Gdx.input.getX() * (VIRTUAL_WIDTH / (float)Gdx.graphics.getWidth());
-    }
-    private float getInputY() {
-        return VIRTUAL_HEIGHT - Gdx.input.getY() * (VIRTUAL_HEIGHT / (float)Gdx.graphics.getHeight());
     }
 
     private void drawRect(float x, float y, float w, float h) {
